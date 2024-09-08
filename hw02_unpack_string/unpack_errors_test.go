@@ -28,3 +28,14 @@ func TestUnpackErrorStringContainsSeveralDigitsInRow(t *testing.T) {
 		})
 	}
 }
+
+func TestUnpackErrorStringEndsWithBackSlashEscapingNothing(t *testing.T) {
+	invalidStrings := []string{`abc\`, `abc\\\`, `\\\\\`}
+	for _, tc := range invalidStrings {
+		tc := tc
+		t.Run(tc, func(t *testing.T) {
+			_, err := Unpack(tc)
+			require.Truef(t, errors.Is(err, ErrorStringEndsWithBackSlashEscapingNothing), "actual error %q", err)
+		})
+	}
+}

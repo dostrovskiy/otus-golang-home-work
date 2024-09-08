@@ -22,7 +22,12 @@ ErrorStringStartsWithNumber is returned when string starts with number, e.g. "3a
 */
 var ErrorStringStartsWithNumber = errors.New("string starts with number")
 
-func runeToNumber(r rune) (int, error) {
+/*
+ErrorStringEndsWithBackSlashEscapingNothing is returned when string ends with backslash escaping nothing, e.g. "abc\".
+*/
+var ErrorStringEndsWithBackSlashEscapingNothing = errors.New("string ends with backslash escaping nothing")
+
+func runeToDigit(r rune) (int, error) {
 	if !unicode.IsDigit(r) {
 		return 0, fmt.Errorf("rune is not a digit")
 	}
@@ -37,28 +42,37 @@ func Unpack(s string) (string, error) {
 		return "", nil
 	}
 	var runes = []rune(s)
-	if _, err := runeToNumber(runes[0]); err == nil {
+	if _, err := runeToDigit(runes[0]); err == nil {
 		return "", ErrorStringStartsWithNumber
 	}
 	var sb strings.Builder
-	var nextNum int
-	var nextErr error
+	var nextDig int
+	var nextDigErr error
+	var prevBackSlash bool
 	for i, r := range runes {
-		nextNum, nextErr = 0, errorInvalidString
+		nextDig, nextDigErr = 0, errorInvalidString
 		if i < len(runes)-1 {
-			nextNum, nextErr = runeToNumber(runes[i+1])
+			nextDig, nextDigErr = runeToDigit(runes[i+1]) // if next rune is a digit, will repeat current rune
 		}
-		if _, err := runeToNumber(r); err == nil {
-			if nextErr == nil {
+		if _, err := runeToDigit(r); err == nil && !prevBackSlash {
+			if nextDigErr == nil {
 				return "", ErrorStringContainsSeveralDigitsInRow
 			}
 			continue
+		}
+		if r == '\\' && !prevBackSlash {
+			if i == len(runes)-1 {
+				return "", ErrorStringEndsWithBackSlashEscapingNothing
+			}
+			prevBackSlash = true
+			continue
 		}		
-		if nextErr == nil {
-			sb.WriteString(strings.Repeat(string(r), nextNum))
+		if nextDigErr == nil {
+			sb.WriteString(strings.Repeat(string(r), nextDig))
 		} else {
 			sb.WriteString(string(r))
 		}
+		prevBackSlash = false
 	}
 	return sb.String(), nil
 }
