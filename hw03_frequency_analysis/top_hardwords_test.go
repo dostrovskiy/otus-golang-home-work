@@ -3,7 +3,7 @@ package hw03frequencyanalysis
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require" //nolint:depguard
+	"github.com/stretchr/testify/require"
 )
 
 func TestTop10HardWords(t *testing.T) {
