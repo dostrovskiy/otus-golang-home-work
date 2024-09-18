@@ -42,7 +42,7 @@ func countWords(words []string, hard bool) []wordCount {
 Top10 returns top 10 most frequent words from text. Words are sets of characters separated by spaces.
 */
 func Top10(text string) []string {
-	return Top10Hard(text, false)
+	return Top10Hard(text, true)
 }
 
 /*
