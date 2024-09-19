@@ -41,15 +41,7 @@ func countWords(words []string, hard bool) []wordCount {
 /*
 Top10 returns top 10 most frequent words from text. Words are sets of characters separated by spaces.
 */
-func Top10(text string) []string {
-	return Top10Hard(text, false)
-}
-
-/*
-Top10Hard returns top 10 most frequent words from text. Words are sets of characters separated by spaces.
-hard - if true, the case of words is ignored and punctuation marks after a word are not included.
-*/
-func Top10Hard(text string, hard bool) []string {
+func Top10(text string, hard bool) []string {
 	if text == "" {
 		return []string{}
 	}

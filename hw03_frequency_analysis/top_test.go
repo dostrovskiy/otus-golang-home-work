@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -45,7 +45,7 @@ var text = `Как видите, он  спускается  по  лестни�
 
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
-		require.Len(t, Top10(""), 0)
+		require.Len(t, Top10("", false), 0)
 	})
 
 	t.Run("positive test", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestTop10(t *testing.T) {
 				"кристофер", // 4
 				"не",        // 4
 			}
-			require.Equal(t, expected, Top10(text))
+			require.Equal(t, expected, Top10(text, true))
 		} else {
 			expected := []string{
 				"он",        // 8
@@ -76,7 +76,7 @@ func TestTop10(t *testing.T) {
 				"не",        // 4
 				"то",        // 4
 			}
-			require.Equal(t, expected, Top10(text))
+			require.Equal(t, expected, Top10(text, false))
 		}
 	})
 }
@@ -175,7 +175,7 @@ func TestTop10Hard(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Top10Hard(tc.input, tc.hard)
+			result := Top10(tc.input, tc.hard)
 			require.Equal(t, tc.expected, result)
 		})
 	}
