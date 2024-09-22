@@ -45,7 +45,7 @@ var text = `Как видите, он  спускается  по  лестни�
 
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
-		require.Len(t, Top10("", false), 0)
+		require.Len(t, Top10(""), 0)
 	})
 
 	t.Run("positive test", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestTop10(t *testing.T) {
 				"кристофер", // 4
 				"не",        // 4
 			}
-			require.Equal(t, expected, Top10(text, true))
+			require.Equal(t, expected, Top10(text))
 		} else {
 			expected := []string{
 				"он",        // 8
@@ -76,7 +76,7 @@ func TestTop10(t *testing.T) {
 				"не",        // 4
 				"то",        // 4
 			}
-			require.Equal(t, expected, Top10(text, false))
+			require.Equal(t, expected, Top10(text))
 		}
 	})
 }
@@ -86,23 +86,9 @@ func TestTop10Hard(t *testing.T) {
 		name     string
 		input    string
 		expected []string
-		hard     bool
 	}{
 		{
 			"Simple words test",
-			"Hello, world! This is an example.",
-			[]string{
-				"Hello,",   // 1
-				"This",     // 1
-				"an",       // 1
-				"example.", // 1
-				"is",       // 1
-				"world!",   // 1
-			},
-			false,
-		},
-		{
-			"Simple words hard RE test",
 			"Hello, world! This is an example.",
 			[]string{
 				"an",      // 1
@@ -112,22 +98,9 @@ func TestTop10Hard(t *testing.T) {
 				"this",    // 1
 				"world",   // 1
 			},
-			true,
 		},
 		{
 			"Cyrillic words test",
-			"Всем привет! Это пример текста.",
-			[]string{
-				"Всем",    // 1
-				"Это",     // 1
-				"привет!", // 1
-				"пример",  // 1
-				"текста.", // 1
-			},
-			false,
-		},
-		{
-			"Cyrillic words hard RE test",
 			"Всем привет! Это пример текста.",
 			[]string{
 				"всем",   // 1
@@ -136,27 +109,9 @@ func TestTop10Hard(t *testing.T) {
 				"текста", // 1
 				"это",    // 1
 			},
-			true,
 		},
 		{
 			"Hard phrase test",
-			"Hello,world! It's an example. It's a... complex wo...rd 'example'.! Multy-hyphen '----' - is a word too.",
-			[]string{
-				"It's",         // 2
-				"'----'",       // 1
-				"'example'.!",  // 1
-				"-",            // 1
-				"Hello,world!", // 1
-				"Multy-hyphen", // 1
-				"a",            // 1
-				"a...",         // 1
-				"an",           // 1
-				"complex",      // 1
-			},
-			false,
-		},
-		{
-			"Hard phrase hard RE test",
 			`Hello,world! It's an example. It's a... complex wo...rd 'example'.! Multy-hyphen '----' - is a word too.`,
 			[]string{
 				"a",            // 2
@@ -170,12 +125,11 @@ func TestTop10Hard(t *testing.T) {
 				"multy-hyphen", // 1
 				"too",          // 1
 			},
-			true,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Top10(tc.input, tc.hard)
+			result := Top10(tc.input)
 			require.Equal(t, tc.expected, result)
 		})
 	}

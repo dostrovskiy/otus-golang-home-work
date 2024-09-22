@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-var simpleWordRegExp = regexp.MustCompile(`[\p{L}\p{P}]+`) // one or more letters and punctuation
-
 var hardWordRegExp = regexp.MustCompile(
 	`\p{L}[\p{L}\p{P}]*\p{L}` + // words with punctuation inside, 2-letter or more
 		`|\p{L}` + // 1-letter words: articles, conjunctions, etc.
@@ -19,12 +17,10 @@ type wordCount struct {
 	count int
 }
 
-func countWords(words []string, hard bool) []wordCount {
+func countWords(words []string) []wordCount {
 	wordCountMap := map[string]int{}
 	for _, word := range words {
-		if hard {
-			word = strings.ToLower(word)
-		}
+		word = strings.ToLower(word)
 		if _, found := wordCountMap[word]; !found {
 			wordCountMap[word] = 1
 		} else {
@@ -41,17 +37,12 @@ func countWords(words []string, hard bool) []wordCount {
 /*
 Top10 returns top 10 most frequent words from text. Words are sets of characters separated by spaces.
 */
-func Top10(text string, hard bool) []string {
+func Top10(text string) []string {
 	if text == "" {
 		return []string{}
 	}
-	var textWords []string
-	if hard {
-		textWords = hardWordRegExp.FindAllString(text, -1)
-	} else {
-		textWords = simpleWordRegExp.FindAllString(text, -1)
-	}
-	words := countWords(textWords, hard)
+	textWords := hardWordRegExp.FindAllString(text, -1)
+	words := countWords(textWords)
 	sort.Slice(words, func(i, j int) bool {
 		return words[i].count > words[j].count ||
 			words[i].count == words[j].count && words[i].word < words[j].word
