@@ -48,4 +48,54 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("remove front and back", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		} // [10, 20, 30, 40, 50, 60, 70, 80]
+
+		l.Remove(l.Front()) // [20, 30, 40, 50, 60, 70, 80]
+		l.Remove(l.Back())  // [20, 30, 40, 50, 60, 70]
+
+		elems := make([]int, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(int))
+		}
+
+		require.Equal(t, []int{20, 30, 40, 50, 60, 70}, elems)
+	})
+
+	t.Run("move all elements from back to front", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		}
+
+		for i := 0; i < l.Len(); i++ {
+			l.MoveToFront(l.Back())
+		}
+
+		elems := make([]int, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(int))
+		}
+
+		require.Equal(t, []int{10, 20, 30, 40, 50, 60, 70, 80}, elems)
+	})
+
+	t.Run("remove all elements", func(t *testing.T) {
+		l := NewList()
+		for _, v := range [...]int{10, 20, 30, 40, 50, 60, 70, 80} {
+			l.PushBack(v) // [10, 20, 30, 40, 50, 60, 70, 80]
+		}
+
+		for i := l.Front(); i != nil; i = i.Next {
+			l.Remove(i)
+		}
+
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+	})
 }
