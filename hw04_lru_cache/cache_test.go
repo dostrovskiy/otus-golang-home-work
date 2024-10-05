@@ -50,13 +50,23 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(3)
+		for i := 0; i < 3; i++ {
+			c.Set(Key(strconv.Itoa(i)), i)
+		}
+		for i := 0; i < 3; i++ {
+			v, _ := c.Get(Key(strconv.Itoa(i)))
+			require.Equal(t, i, v)
+		}
+		c.Clear()
+		for i := 0; i < 3; i++ {
+			v, _ := c.Get(Key(strconv.Itoa(i)))
+			require.Nil(t, v)
+		}
 	})
 }
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
+func TestCacheMultithreading(_ *testing.T) {
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -76,4 +86,51 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+func TestCacheDisplacement(t *testing.T) {
+	t.Run("simple displacement", func(t *testing.T) {
+		c := NewCache(3)
+		for i := 0; i < 30; i++ {
+			c.Set(Key(strconv.Itoa(i)), i) // [27, 28, 29]
+		}
+
+		for i := 0; i < 27; i++ {
+			val, ok := c.Get(Key(strconv.Itoa(i)))
+			require.False(t, ok)
+			require.Nil(t, val)
+		}
+
+		for i := 27; i < 30; i++ {
+			val, ok := c.Get(Key(strconv.Itoa(i)))
+			require.True(t, ok)
+			require.Equal(t, i, val)
+		}
+	})
+
+	t.Run("displacement oldest", func(t *testing.T) {
+		c := NewCache(3)
+		for i := 2; i >= 0; i-- {
+			c.Set(Key(strconv.Itoa(i)), i) // [0, 1, 2]
+		}
+
+		for i := 0; i < 10; i++ {
+			if i%2 == 0 {
+				c.Get("1")
+			} else {
+				c.Get("2")
+			}
+		} // [1, 2, 0]
+		c.Set("3", 3) // [3, 1, 2]
+
+		val, ok := c.Get("0")
+		require.False(t, ok)
+		require.Nil(t, val)
+
+		for i := 1; i <= 3; i++ {
+			val, ok := c.Get(Key(strconv.Itoa(i)))
+			require.True(t, ok)
+			require.Equal(t, i, val)
+		}
+	})
 }
