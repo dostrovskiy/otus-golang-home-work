@@ -149,5 +149,3 @@ func BenchmarkListMoveToFront(b *testing.B) {
 		})
 	}
 }
-
-
