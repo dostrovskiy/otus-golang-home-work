@@ -1,6 +1,7 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -99,3 +100,54 @@ func TestList(t *testing.T) {
 		require.Nil(t, l.Back())
 	})
 }
+
+func BenchmarkListPushBackAndRemove(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				f := list.Front()
+				list.PushBack(f)
+				list.Remove(f)
+			}
+		})
+	}
+}
+
+func BenchmarkListPushFrontAndRemove(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				f := list.Back()
+				list.PushFront(f)
+				list.Remove(f)
+			}
+		})
+	}
+}
+
+func BenchmarkListMoveToFront(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			list := NewList()
+			for i := 0; i < size; i++ {
+				list.PushFront(i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				list.MoveToFront(list.Back())
+			}
+		})
+	}
+}
+
+
