@@ -38,7 +38,7 @@ func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,
 		queue:    NewList(),
-		items:    make(map[Key]*ListItem, capacity),
+		items:    make(map[Key]*ListItem),
 	}
 }
 
@@ -46,7 +46,7 @@ func (c *lruCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.queue = NewList()
-	c.items = make(map[Key]*ListItem, c.capacity)
+	c.items = make(map[Key]*ListItem)
 }
 
 func (c *lruCache) Get(key Key) (interface{}, bool) {

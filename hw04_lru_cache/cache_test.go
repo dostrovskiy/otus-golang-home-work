@@ -1,6 +1,7 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -133,4 +134,51 @@ func TestCacheDisplacement(t *testing.T) {
 			require.Equal(t, i, val)
 		}
 	})
+}
+
+func BenchmarkCacheGet(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			cache := NewCache(size)
+			for i := 0; i < size; i++ {
+				cache.Set(Key(strconv.Itoa(i)), i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				cache.Get(Key(strconv.Itoa(rand.Intn(100))))
+			}
+		})
+	}
+}
+
+func BenchmarkCacheSet(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			cache := NewCache(size)
+			for i := 0; i < size; i++ {
+				cache.Set(Key(strconv.Itoa(i)), i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				v := rand.Intn(100)
+				k := Key(strconv.Itoa(v))
+				cache.Set(k, v)
+			}
+		})
+	}
+}
+
+func BenchmarkCacheClear(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			cache := NewCache(size)
+			for i := 0; i < size; i++ {
+				cache.Set(Key(strconv.Itoa(i)), i)
+			}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				cache.Clear()
+			}
+		})
+	}
 }
