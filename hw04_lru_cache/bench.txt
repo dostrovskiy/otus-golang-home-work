@@ -1,0 +1,24 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/dostrovskiy/otus-golang-home-work/hw04_lru_cache
+cpu: Intel(R) Core(TM) i5-10600K CPU @ 4.10GHz
+BenchmarkCacheGet/100-12              	12479875	       113.7 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheGet/1000-12             	12773730	        95.69 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheGet/10000-12            	13774278	        93.36 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheSet/100-12              	10519782	       104.6 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheSet/1000-12             	12747418	        98.80 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheSet/10000-12            	12274154	        98.23 ns/op	      32 B/op	       1 allocs/op
+BenchmarkCacheClear/100-12            	15188930	        81.83 ns/op	      72 B/op	       2 allocs/op
+BenchmarkCacheClear/1000-12           	14918767	        82.15 ns/op	      72 B/op	       2 allocs/op
+BenchmarkCacheClear/10000-12          	14660982	        83.02 ns/op	      72 B/op	       2 allocs/op
+BenchmarkListPushBackAndRemove/100-12 	19923228	        58.90 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListPushBackAndRemove/1000-12         	28808826	        45.02 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListPushBackAndRemove/10000-12        	27716697	        42.77 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListPushFrontAndRemove/100-12         	20090708	        50.05 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListPushFrontAndRemove/1000-12        	28578096	        43.38 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListPushFrontAndRemove/10000-12       	28815536	        42.01 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListMoveToFront/100-12                	35308032	        37.01 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListMoveToFront/1000-12               	35072541	        36.14 ns/op	      32 B/op	       1 allocs/op
+BenchmarkListMoveToFront/10000-12              	32033313	        38.86 ns/op	      32 B/op	       1 allocs/op
+PASS
+ok  	github.com/dostrovskiy/otus-golang-home-work/hw04_lru_cache	25.121s
