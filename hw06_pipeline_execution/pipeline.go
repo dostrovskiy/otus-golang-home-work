@@ -15,12 +15,39 @@ type Stage func(in In) (out Out)
 
 // ExecutePipeline starts pipeline executing stages in order.
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	// Выстраиваем пайплайн: для каждой стадии создаем горутину, которая слушает исходящий канал от предыдущей стадии
-	// Входящий канал для первой: входящий in функции ExecutePipeline
-	// Исходящий канал для последней, out, возвращаем из функции ExecutePipeline
 	out := in
 	for _, stage := range stages {
-		out = stage(out)
+		midIn := out
+		midOut := make(Bi)
+		allDone := make(Bi)
+		
+		// Goroutine implement intermediate channels between stages to be able to interrupt the pipeline execution
+		go func(midOut Bi, allDone Bi) {
+			defer close(allDone)
+			defer close(midOut)
+			for v := range midIn {
+				select {
+				case <-done:
+					return
+				case midOut <- v:
+				}
+			}
+		}(midOut, allDone)
+		
+		// Goroutine to read up the middle channels before they are closed, after done signal
+		go func(midOut Bi, allDone Bi) {
+			select {
+			case <-done:
+				for v := range midOut {
+					_ = v
+				}
+				return
+			case <-allDone:
+				return
+			}
+		}(midOut, allDone)
+
+		out = stage(midOut)
 	}
 	return out
 }
