@@ -20,7 +20,6 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 		midIn := out
 		midOut := make(Bi)
 		allDone := make(Bi)
-		
 		// Goroutine implement intermediate channels between stages to be able to interrupt the pipeline execution
 		go func(midOut Bi, allDone Bi) {
 			defer close(allDone)
@@ -33,7 +32,6 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 				}
 			}
 		}(midOut, allDone)
-		
 		// Goroutine to read up the middle channels before they are closed, after done signal
 		go func(midOut Bi, allDone Bi) {
 			select {
