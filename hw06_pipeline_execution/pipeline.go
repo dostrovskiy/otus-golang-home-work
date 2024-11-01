@@ -13,39 +13,29 @@ type (
 // Stage is a pipeline stage function.
 type Stage func(in In) (out Out)
 
-// ExecutePipeline starts pipeline executing stages in order.
-func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	out := in
-	for _, stage := range stages {
-		midIn := out
-		midOut := make(Bi)
-		allDone := make(Bi)
-		// Goroutine implement intermediate channels between stages to be able to interrupt the pipeline execution
-		go func(midOut Bi, allDone Bi) {
-			defer close(allDone)
-			defer close(midOut)
-			for v := range midIn {
-				select {
-				case <-done:
-					return
-				case midOut <- v:
-				}
-			}
-		}(midOut, allDone)
-		// Goroutine to read up the middle channels before they are closed, after done signal
-		go func(midOut Bi, allDone Bi) {
+func check(done In, in In) Out {
+	out := make(Bi)
+	go func() {
+		defer close(out)
+		for {
 			select {
 			case <-done:
-				for v := range midOut {
-					_ = v
+				return
+			case v, ok := <-in:
+				if !ok {
+					return
 				}
-				return
-			case <-allDone:
-				return
+				out <- v
 			}
-		}(midOut, allDone)
-
-		out = stage(midOut)
-	}
+		}
+	}()
 	return out
+}
+
+// ExecutePipeline starts pipeline executing stages in order.
+func ExecutePipeline(in In, done In, stages ...Stage) Out {
+	for _, stage := range stages {
+		in = stage(check(done, in))
+	}
+	return in
 }
