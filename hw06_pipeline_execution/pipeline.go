@@ -2,21 +2,30 @@
 package hw06pipelineexecution
 
 type (
-	// In is a channel for input data for pipeline stage.
+	// In is read only channel for input data.
 	In = <-chan interface{}
-	// Out is a channel for output data for pipeline stage.
+	// Out is read only channel for output results.
 	Out = In
-	// Bi is a bidirectional channel.
+	// Bi is a read/write channel.
 	Bi = chan interface{}
 )
 
-// Stage is a pipeline stage function.
+// Stage is a pipeline stage function, which takes data from read only channel "in"
+// and return results to read only channel "out".
 type Stage func(in In) (out Out)
 
 func check(done In, in In) Out {
 	out := make(Bi)
 	go func() {
-		defer close(out)
+		defer func() {
+			close(out)
+			for range out {
+				_ = out
+			}
+			for range in {
+				_ = in
+			}
+		}()
 		for {
 			select {
 			case <-done:
