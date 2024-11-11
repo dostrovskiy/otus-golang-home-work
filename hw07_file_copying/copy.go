@@ -19,6 +19,13 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	total := stat.Size()
 	fmt.Println("File size", total)
+	if total <= 0 {
+		return ErrUnsupportedFile
+	}
+
+	if offset > total {
+		return ErrOffsetExceedsFileSize
+	}
 
 	fromFile, err := os.Open(fromPath)
 	if err != nil {
@@ -32,22 +39,26 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	defer toFile.Close()
 
-	_ = offset
-	_ = limit
+	if limit > 0 && offset+limit < total {
+		total = offset + limit
+	}
 	buf := make([]byte, 8)
-	var curr int64
+	curr := offset
 	for {
 		read, errRead := fromFile.ReadAt(buf, curr)
 		if errRead != nil && errRead != io.EOF {
 			return errRead
+		}
+		if curr+int64(read) > total {
+			read = int(total - curr)
 		}
 		_, errWrite := toFile.Write(buf[:read])
 		if errWrite != nil {
 			return errWrite
 		}
 		curr += int64(read)
-		fmt.Printf("\rCopying... %d%%", int64(float64(curr)/float64(total)*100))
-		if errRead == io.EOF {
+		fmt.Printf("\rCopying... %d%%", int64(float64(curr-offset)/float64(total-offset)*100))
+		if errRead == io.EOF || curr >= total {
 			break
 		}
 	}
