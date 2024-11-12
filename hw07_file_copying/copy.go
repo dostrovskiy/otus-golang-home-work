@@ -8,10 +8,13 @@ import (
 )
 
 var (
-	ErrUnsupportedFile       = errors.New("unsupported file")
+	// ErrUnsupportedFile is returned when file size is 0.
+	ErrUnsupportedFile = errors.New("unsupported file")
+	// ErrOffsetExceedsFileSize is returned when offset exceeds file size.
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
+// Copy copies fromPath to toPath from offset to offset+limit or to the end of the file if limit is 0.
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	stat, err := os.Stat(fromPath)
 	if err != nil {
