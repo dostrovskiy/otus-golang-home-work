@@ -20,7 +20,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("execution error: %+v\n", err)
 	}
-
 	ret := RunCmd(cmd, env)
 	os.Exit(ret)
 }
