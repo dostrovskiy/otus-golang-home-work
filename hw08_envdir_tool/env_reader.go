@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
-	"unicode"
 )
+
+// ErrInvalidEnvName is returned when file name contains '='.
+var ErrInvalidEnvName = errors.New("invalid env name")
 
 // Environment represents a set of environment variables.
 type Environment map[string]EnvValue
@@ -44,6 +47,9 @@ func readEnv(dir string, file os.DirEntry) (eval *EnvValue, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if strings.Contains(file.Name(), "=") {
+		return nil, ErrInvalidEnvName
+	}
 	if finfo.Size() == 0 {
 		return &EnvValue{NeedRemove: true}, nil
 	}
@@ -60,5 +66,9 @@ func readEnv(dir string, file os.DirEntry) (eval *EnvValue, err error) {
 		return &EnvValue{Value: ""}, nil
 	}
 	bs := bytes.ReplaceAll(sc.Bytes(), []byte{'\x00'}, []byte{'\n'})
-	return &EnvValue{Value: strings.TrimRightFunc(string(bs), unicode.IsSpace)}, nil
+	return &EnvValue{Value: strings.TrimRightFunc(string(bs), shouldTrim)}, nil
+}
+
+func shouldTrim(r rune) bool {
+	return r == '\t' || r == ' '
 }

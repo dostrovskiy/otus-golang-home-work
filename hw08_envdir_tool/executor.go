@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/exec"
@@ -16,10 +17,13 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	execCmd.Env = getEnv(execCmd.Environ(), env)
 	err := execCmd.Run()
 	if err != nil {
+		var exit *exec.ExitError
+		if errors.As(err, &exit); exit != nil {
+			return exit.ExitCode()
+		}
 		log.Fatalf("execution error: %+v\n", err)
-		return 1
 	}
-	return execCmd.ProcessState.ExitCode()
+	return 0
 }
 
 func getEnv(oldEnv []string, addEnv Environment) []string {
