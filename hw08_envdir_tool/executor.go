@@ -21,7 +21,8 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		if errors.As(err, &exit); exit != nil {
 			return exit.ExitCode()
 		}
-		log.Fatalf("execution error: %+v\n", err)
+		log.Printf("execution error: %+v\n", err)
+		return 1
 	}
 	return 0
 }
