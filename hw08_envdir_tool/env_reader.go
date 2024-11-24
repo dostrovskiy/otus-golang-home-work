@@ -33,6 +33,9 @@ func ReadDir(dir string) (Environment, error) {
 		if file.IsDir() {
 			continue
 		}
+		if strings.Contains(file.Name(), "=") {
+			return nil, ErrInvalidEnvName
+		}
 		eval, err := readEnv(dir, file)
 		if err != nil {
 			return nil, err
@@ -46,9 +49,6 @@ func readEnv(dir string, file os.DirEntry) (eval *EnvValue, err error) {
 	finfo, err := file.Info()
 	if err != nil {
 		return nil, err
-	}
-	if strings.Contains(file.Name(), "=") {
-		return nil, ErrInvalidEnvName
 	}
 	if finfo.Size() == 0 {
 		return &EnvValue{NeedRemove: true}, nil
@@ -66,9 +66,5 @@ func readEnv(dir string, file os.DirEntry) (eval *EnvValue, err error) {
 		return &EnvValue{Value: ""}, nil
 	}
 	bs := bytes.ReplaceAll(sc.Bytes(), []byte{'\x00'}, []byte{'\n'})
-	return &EnvValue{Value: strings.TrimRightFunc(string(bs), shouldTrim)}, nil
-}
-
-func shouldTrim(r rune) bool {
-	return r == '\t' || r == ' '
+	return &EnvValue{Value: strings.TrimRight(string(bs), "\t ")}, nil
 }
