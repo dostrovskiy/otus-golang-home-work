@@ -293,3 +293,25 @@ func TestInvalidErrors(t *testing.T) {
 		})
 	}
 }
+
+type (
+	Dumb struct {
+		Numbers []string `validate:"regexp:^\\w+$"`
+	}
+)
+
+func BenchmarkValidate(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			nums := []string{}
+			for i := 0; i < size; i++ {
+				nums = append(nums, fmt.Sprintf("%d", i))
+			}
+			dumb := Dumb{nums}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = Validate(dumb)
+			}
+		})
+	}
+}
