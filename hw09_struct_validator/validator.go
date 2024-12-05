@@ -199,10 +199,12 @@ func (rule structRuleValidator) Validate(field fieldValue, vErrs *ValidationErro
 		}
 		ruleStrs := strings.Split(fTag, "|")
 		for _, ruleStr := range ruleStrs {
-			rName, rVal := ruleStr, ""
+			rName := ruleStr
+			rVal := ""
 			i := strings.Index(ruleStr, ":")
 			if i > -1 {
-				rName, rVal = ruleStr[:i], ruleStr[i+1:]
+				rName = ruleStr[:i]
+				rVal = ruleStr[i+1:]
 			}
 			vRule, err := getRuleValidator(fVal, rName, rVal)
 			if err != nil {
