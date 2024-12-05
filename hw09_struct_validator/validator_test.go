@@ -50,6 +50,14 @@ type (
 		Stars []User `validate:"nested"`
 		Staff []User
 	}
+
+	WrongRegExp struct {
+		Name string `validate:"len:4|regexp:^\\p{L+$"`
+	}
+
+	WrongRegExpSlice struct {
+		Names []string `validate:"len:4|regexp:^\\g+$"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -258,6 +266,30 @@ func TestValidateError(t *testing.T) {
 			err := Validate(tt.in)
 			require.Truef(t, errors.As(err, &ValidationErrors{}), "actual error %q", err)
 			require.EqualError(t, err, tt.expectedErr.Error())
+		})
+	}
+}
+
+func TestInvalidErrors(t *testing.T) {
+	tests := []struct {
+		in          interface{}
+		expectedErr error
+	}{
+		{
+			WrongRegExp{Name: "rose"},
+			ErrRuleSyntax(""),
+		},
+		{
+			WrongRegExpSlice{Names: []string{"rose", "iris", "lily"}},
+			ErrRuleSyntax(""),
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			t.Parallel()
+			err := Validate(tt.in)
+			require.ErrorContainsf(t, err, "error parsing regexp", "Expected containing 'error parsing regexp', actual: %v", err)
 		})
 	}
 }
