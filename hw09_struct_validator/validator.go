@@ -197,9 +197,11 @@ func (rule structRuleValidator) Validate(field fieldValue, vErrs *ValidationErro
 		if fTag == "" {
 			continue
 		}
-		ruleStrs := strings.Split(fTag, "|")
-		for _, ruleStr := range ruleStrs {
-			rName, rVal := ruleStr, ""
+		strs := strings.Split(fTag, "|")
+		for _, str := range strs {
+			// 1.57.2 show error: The copy of the 'for' variable "str" can be deleted (Go 1.22+) (copyloopvar)
+			// 1.62.0: no errors
+			rName, rVal := str, "" //nolint
 			i := strings.Index(rName, ":")
 			if i > -1 {
 				rName, rVal = rName[:i], rName[i+1:]
