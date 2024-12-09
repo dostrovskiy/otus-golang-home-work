@@ -69,48 +69,34 @@ type rule struct {
 
 type intRuleValidator struct {
 	rule
+	min int64
+	max int64
+	in  []int64
 }
 
 func (rule intRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors) error {
 	switch rule.name {
 	case "min":
-		vMin, err := strconv.ParseInt(rule.value, 10, 64)
-		if err != nil {
-			return err
-		}
-		if field.value.Int() < vMin {
+		if field.value.Int() < rule.min {
 			*vErrs = append(*vErrs, ValidationError{
 				Field: field.name,
-				Err:   MinIntValidationError(vMin),
+				Err:   MinIntValidationError(rule.min),
 			})
 			return nil
 		}
 	case "max":
-		vMax, err := strconv.ParseInt(rule.value, 10, 64)
-		if err != nil {
-			return err
-		}
-		if field.value.Int() > vMax {
+		if field.value.Int() > rule.max {
 			*vErrs = append(*vErrs, ValidationError{
 				Field: field.name,
-				Err:   MaxIntValidationError(vMax),
+				Err:   MaxIntValidationError(rule.max),
 			})
 			return nil
 		}
 	case "in":
-		nums := strings.Split(rule.value, ",")
-		var ints []int64
-		for _, num := range nums {
-			i, err := strconv.ParseInt(num, 10, 64)
-			if err != nil {
-				return err
-			}
-			ints = append(ints, i)
-		}
-		if !slices.Contains(ints, field.value.Int()) {
+		if !slices.Contains(rule.in, field.value.Int()) {
 			*vErrs = append(*vErrs, ValidationError{
 				Field: field.name,
-				Err:   InIntValidationError(ints),
+				Err:   InIntValidationError(rule.in),
 			})
 			return nil
 		}
@@ -123,19 +109,17 @@ func (rule intRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors)
 type strRuleValidator struct {
 	rule
 	regExp *regexp.Regexp
+	len    int
+	in     []string
 }
 
 func (rule strRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors) error {
 	switch rule.name {
 	case "len":
-		slen, err := strconv.Atoi(rule.value)
-		if err != nil {
-			return err
-		}
-		if field.value.Len() != slen {
+		if field.value.Len() != rule.len {
 			*vErrs = append(*vErrs, ValidationError{
 				Field: field.name,
-				Err:   LenStrValidationError(slen),
+				Err:   LenStrValidationError(rule.len),
 			})
 			return nil
 		}
@@ -148,11 +132,10 @@ func (rule strRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors)
 			return nil
 		}
 	case "in":
-		strs := strings.Split(rule.value, ",")
-		if !slices.Contains(strs, field.value.String()) {
+		if !slices.Contains(rule.in, field.value.String()) {
 			*vErrs = append(*vErrs, ValidationError{
 				Field: field.name,
-				Err:   InStrValidationError(strs),
+				Err:   InStrValidationError(rule.in),
 			})
 			return nil
 		}
@@ -164,19 +147,13 @@ func (rule strRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors)
 
 type sliceRuleValidator struct {
 	rule
+	inner ruleValidator
 }
 
 func (rule sliceRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors) error {
-	if field.value.Len() == 0 {
-		return nil
-	}
-	vRule, err := getRuleValidator(field.value.Index(0), rule.name, rule.value)
-	if err != nil {
-		return err
-	}
-	if vRule != nil {
+	if field.value.Len() > 0 && rule.inner != nil {
 		for i := 0; i < field.value.Len(); i++ {
-			err = vRule.Validate(fieldValue{field.name, field.value.Index(i)}, vErrs)
+			err := rule.inner.Validate(fieldValue{field.name, field.value.Index(i)}, vErrs)
 			if err != nil {
 				return err
 			}
@@ -187,34 +164,20 @@ func (rule sliceRuleValidator) Validate(field fieldValue, vErrs *ValidationError
 
 type structRuleValidator struct {
 	rule
+	nested map[string][]ruleValidator
 }
 
 func (rule structRuleValidator) Validate(field fieldValue, vErrs *ValidationErrors) error {
 	for i := 0; i < field.value.NumField(); i++ {
-		fVal := field.value.Field(i)
 		fType := field.value.Type().Field(i)
-		fTag := fType.Tag.Get("validate")
-		if fTag == "" {
+		rules, ok := rule.nested[fType.Name]
+		if !ok {
 			continue
 		}
-		strs := strings.Split(fTag, "|")
-		for _, str := range strs {
-			// 1.57.2 show error: The copy of the 'for' variable "str" can be deleted (Go 1.22+) (copyloopvar)
-			// 1.62.0: no errors
-			rName, rVal := str, "" //nolint
-			i := strings.Index(rName, ":")
-			if i > -1 {
-				rName, rVal = rName[:i], rName[i+1:]
-			}
-			vRule, err := getRuleValidator(fVal, rName, rVal)
+		for _, rule := range rules {
+			err := rule.Validate(fieldValue{fType.Name, field.value.Field(i)}, vErrs)
 			if err != nil {
 				return err
-			}
-			if vRule != nil {
-				err = vRule.Validate(fieldValue{fType.Name, fVal}, vErrs)
-				if err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -245,28 +208,13 @@ func Validate(v interface{}) error {
 func getRuleValidator(fieldVal reflect.Value, ruleName string, ruleVal string) (ruleValidator, error) {
 	switch fieldVal.Kind() {
 	case reflect.Int:
-		return intRuleValidator{rule{ruleName, ruleVal}}, nil
+		return getIntRuleValidator(ruleName, ruleVal)
 	case reflect.String:
-		if ruleName == "regexp" {
-			re, err := regexp.Compile(ruleVal)
-			if err != nil {
-				return nil, err
-			}
-			return strRuleValidator{rule{ruleName, ruleVal}, re}, nil
-		}
-		return strRuleValidator{rule{ruleName, ruleVal}, nil}, nil
+		return getStrRuleValidator(ruleName, ruleVal)
 	case reflect.Slice:
-		if fieldVal.Len() > 0 {
-			return sliceRuleValidator{rule{ruleName, ruleVal}}, nil
-		} else {
-			return nil, nil
-		}
+		return getSliceRuleValidator(fieldVal, ruleName, ruleVal)
 	case reflect.Struct:
-		if ruleName == "nested" {
-			return structRuleValidator{rule{ruleName, ruleVal}}, nil
-		} else {
-			return nil, nil
-		}
+		return getStructRuleValidator(fieldVal, ruleName, ruleVal)
 	case reflect.Invalid, reflect.Bool, reflect.Int8, reflect.Int16, reflect.Int32,
 		reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32,
 		reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Complex64,
@@ -276,4 +224,96 @@ func getRuleValidator(fieldVal reflect.Value, ruleName string, ruleVal string) (
 	default:
 		return nil, ErrUnsupportedType(fieldVal.Kind().String())
 	}
+}
+
+func getIntRuleValidator(ruleName, ruleVal string) (ruleValidator, error) {
+	switch ruleName {
+	case "min":
+		vMin, err := strconv.ParseInt(ruleVal, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return intRuleValidator{rule{ruleName, ruleVal}, vMin, 0, nil}, nil
+	case "max":
+		vMax, err := strconv.ParseInt(ruleVal, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return intRuleValidator{rule{ruleName, ruleVal}, 0, vMax, nil}, nil
+	case "in":
+		nums := strings.Split(ruleVal, ",")
+		ints := []int64{}
+		for _, num := range nums {
+			i, err := strconv.ParseInt(num, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			ints = append(ints, i)
+		}
+		return intRuleValidator{rule{ruleName, ruleVal}, 0, 0, ints}, nil
+	default:
+		return nil, ErrUnsupportedRule("int", ruleName)
+	}
+}
+
+func getStrRuleValidator(ruleName, ruleVal string) (ruleValidator, error) {
+	switch ruleName {
+	case "len":
+		sLen, err := strconv.Atoi(ruleVal)
+		if err != nil {
+			return nil, err
+		}
+		return strRuleValidator{rule{ruleName, ruleVal}, nil, sLen, nil}, nil
+	case "regexp":
+		re, err := regexp.Compile(ruleVal)
+		if err != nil {
+			return nil, err
+		}
+		return strRuleValidator{rule{ruleName, ruleVal}, re, 0, nil}, nil
+	case "in":
+		return strRuleValidator{rule{ruleName, ruleVal}, nil, 0, strings.Split(ruleVal, ",")}, nil
+	default:
+		return nil, ErrUnsupportedRule("str", ruleName)
+	}
+}
+
+func getSliceRuleValidator(fieldVal reflect.Value, ruleName, ruleVal string) (ruleValidator, error) {
+	if fieldVal.Len() > 0 {
+		inner, err := getRuleValidator(fieldVal.Index(0), ruleName, ruleVal)
+		if err != nil {
+			return nil, err
+		}
+		return sliceRuleValidator{rule{ruleName, ruleVal}, inner}, nil
+	}
+	return nil, nil
+}
+
+func getStructRuleValidator(fieldVal reflect.Value, ruleName, ruleVal string) (ruleValidator, error) {
+	if ruleName == "nested" {
+		nested := make(map[string][]ruleValidator)
+		for i := 0; i < fieldVal.NumField(); i++ {
+			fVal := fieldVal.Field(i)
+			fType := fieldVal.Type().Field(i)
+			fTag := fType.Tag.Get("validate")
+			if fTag == "" {
+				continue
+			}
+			nested[fType.Name] = make([]ruleValidator, 0)
+			strs := strings.Split(fTag, "|")
+			for _, str := range strs {
+				rName, rVal := str, "" //nolint
+				idx := strings.Index(rName, ":")
+				if idx > -1 {
+					rName, rVal = rName[:idx], rName[idx+1:]
+				}
+				rule, err := getRuleValidator(fVal, rName, rVal)
+				if err != nil {
+					return nil, err
+				}
+				nested[fType.Name] = append(nested[fType.Name], rule)
+			}
+		}
+		return structRuleValidator{rule{ruleName, ruleVal}, nested}, nil
+	}
+	return nil, nil
 }

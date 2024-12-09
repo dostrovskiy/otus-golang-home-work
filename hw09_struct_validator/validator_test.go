@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -300,7 +302,7 @@ type (
 	}
 )
 
-func BenchmarkValidate(b *testing.B) {
+func BenchmarkValidateRegexpStringSlice(b *testing.B) {
 	for _, size := range []int{100, 1000, 10000} {
 		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
 			nums := []string{}
@@ -311,6 +313,79 @@ func BenchmarkValidate(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_ = Validate(dumb)
+			}
+		})
+	}
+}
+
+type (
+	People struct {
+		Names []string `validate:"len:4|in:John,Paul,Lily,Rose"`
+	}
+)
+
+func BenchmarkValidateLenInStringSlice(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			names := []string{}
+			for i := 0; i < size; i++ {
+				names = append(names, "George")
+			}
+			dumb := Dumb{names}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = Validate(dumb)
+			}
+		})
+	}
+}
+
+type (
+	Nursery struct {
+		Ages []int `validate:"min:3|max:7000|in:3,40,500,600,7000"`
+	}
+)
+
+func BenchmarkValidateMinMaxInIntSlice(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			ages := []int{}
+			for i := 0; i < size; i++ {
+				ages = append(ages, rand.Intn(100))
+			}
+			sunshine := Nursery{ages}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = Validate(sunshine)
+			}
+		})
+	}
+}
+
+type (
+	Company struct {
+		Employees []User `validate:"nested"`
+	}
+)
+
+func BenchmarkValidateStructSlice(b *testing.B) {
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			employees := []User{}
+			for i := 0; i < size; i++ {
+				employees = append(employees, User{
+					ID:     uuid.NewString(),
+					Name:   fmt.Sprintf("User %d", i),
+					Age:    rand.Intn(100),
+					Email:  fmt.Sprintf("user%d@domain.com", i),
+					Role:   "stuff",
+					Phones: []string{"12345678901", "109876543210"},
+				})
+			}
+			noname := Company{employees}
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = Validate(noname)
 			}
 		})
 	}

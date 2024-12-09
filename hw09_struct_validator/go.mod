@@ -2,7 +2,10 @@ module github.com/dostrovskiy/otus-golang-home-work/hw09_struct_validator
 
 go 1.22
 
-require github.com/stretchr/testify v1.10.0
+require (
+	github.com/google/uuid v1.6.0
+	github.com/stretchr/testify v1.10.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
