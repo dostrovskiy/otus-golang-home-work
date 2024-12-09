@@ -1,0 +1,51 @@
+goos: linux
+goarch: amd64
+pkg: github.com/dostrovskiy/otus-golang-home-work/hw09_struct_validator
+cpu: Intel(R) Core(TM) i5-10600K CPU @ 4.10GHz
+                                   │ 2_string_int_struct_slice_before_10.txt │ 2_string_int_struct_slice_after_10.txt │
+                                   │                 sec/op                  │     sec/op      vs base                │
+ValidateRegexpStringSlice/100-12                                 11.58µ ± 3%      11.74µ ± 5%        ~ (p=0.165 n=10)
+ValidateRegexpStringSlice/1000-12                                98.18µ ± 3%      97.50µ ± 1%   -0.70% (p=0.029 n=10)
+ValidateRegexpStringSlice/10000-12                               1.093m ± 1%      1.094m ± 4%        ~ (p=0.481 n=10)
+ValidateLenInStringSlice/100-12                                  19.32µ ± 1%      19.78µ ± 1%   +2.37% (p=0.000 n=10)
+ValidateLenInStringSlice/1000-12                                 165.8µ ± 1%      165.0µ ± 6%        ~ (p=0.912 n=10)
+ValidateLenInStringSlice/10000-12                                1.616m ± 1%      1.622m ± 1%        ~ (p=0.912 n=10)
+ValidateMinMaxInIntSlice/100-12                                  99.27µ ± 2%      68.12µ ± 2%  -31.38% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/1000-12                                 976.9µ ± 1%      655.2µ ± 2%  -32.93% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/10000-12                               10.175m ± 1%      7.036m ± 2%  -30.85% (p=0.000 n=10)
+ValidateStructSlice/100-12                                       787.0µ ± 2%      135.2µ ± 2%  -82.82% (p=0.000 n=10)
+ValidateStructSlice/1000-12                                      8.024m ± 1%      1.277m ± 3%  -84.09% (p=0.000 n=10)
+ValidateStructSlice/10000-12                                     87.82m ± 1%      13.65m ± 2%  -84.46% (p=0.000 n=10)
+geomean                                                          624.5µ           361.0µ       -42.19%
+
+                                   │ 2_string_int_struct_slice_before_10.txt │ 2_string_int_struct_slice_after_10.txt │
+                                   │                  B/op                   │      B/op       vs base                │
+ValidateRegexpStringSlice/100-12                                2.712Ki ± 0%     3.188Ki ± 0%  +17.57% (p=0.000 n=10)
+ValidateRegexpStringSlice/1000-12                               2.712Ki ± 0%     3.188Ki ± 0%  +17.57% (p=0.000 n=10)
+ValidateRegexpStringSlice/10000-12                              2.714Ki ± 0%     3.190Ki ± 0%  +17.56% (p=0.000 n=10)
+ValidateLenInStringSlice/100-12                                 2.712Ki ± 0%     3.188Ki ± 0%  +17.57% (p=0.000 n=10)
+ValidateLenInStringSlice/1000-12                                2.712Ki ± 0%     3.188Ki ± 0%  +17.57% (p=0.000 n=10)
+ValidateLenInStringSlice/10000-12                               2.713Ki ± 0%     3.189Ki ± 0%  +17.57% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/100-12                                 39.80Ki ± 1%     21.43Ki ± 1%  -46.16% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/1000-12                                373.4Ki ± 0%     178.7Ki ± 0%  -52.13% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/10000-12                               4.379Mi ± 0%     2.471Mi ± 0%  -43.56% (p=0.000 n=10)
+ValidateStructSlice/100-12                                     608.03Ki ± 0%     38.63Ki ± 1%  -93.65% (p=0.000 n=10)
+ValidateStructSlice/1000-12                                    6083.8Ki ± 0%     324.3Ki ± 0%  -94.67% (p=0.000 n=10)
+ValidateStructSlice/10000-12                                   59.980Mi ± 0%     3.671Mi ± 0%  -93.88% (p=0.000 n=10)
+geomean                                                         65.31Ki          29.75Ki       -54.46%
+
+                                   │ 2_string_int_struct_slice_before_10.txt │ 2_string_int_struct_slice_after_10.txt │
+                                   │                allocs/op                │   allocs/op     vs base                │
+ValidateRegexpStringSlice/100-12                                  47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateRegexpStringSlice/1000-12                                 47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateRegexpStringSlice/10000-12                                47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateLenInStringSlice/100-12                                   47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateLenInStringSlice/1000-12                                  47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateLenInStringSlice/10000-12                                 47.00 ± 0%       51.00 ± 0%   +8.51% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/100-12                                  1307.0 ± 2%       827.0 ± 2%  -36.73% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/1000-12                                12.917k ± 0%      7.923k ± 1%  -38.66% (p=0.000 n=10)
+ValidateMinMaxInIntSlice/10000-12                               129.02k ± 0%      79.04k ± 0%  -38.74% (p=0.000 n=10)
+ValidateStructSlice/100-12                                       9.848k ± 0%      1.160k ± 1%  -88.22% (p=0.000 n=10)
+ValidateStructSlice/1000-12                                      98.39k ± 0%      10.47k ± 0%  -89.36% (p=0.000 n=10)
+ValidateStructSlice/10000-12                                     983.9k ± 0%      103.5k ± 0%  -89.48% (p=0.000 n=10)
+geomean                                                          1.296k            689.1       -46.82%

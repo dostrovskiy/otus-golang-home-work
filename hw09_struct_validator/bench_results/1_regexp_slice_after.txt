@@ -1,0 +1,9 @@
+﻿goos: windows
+goarch: amd64
+pkg: github.com/dostrovskiy/otus-golang-home-work/hw09_struct_validator
+cpu: Intel(R) Core(TM) i5-10600K CPU @ 4.10GHz
+BenchmarkValidate/100-12         	   95529	     11279 ns/op	    2777 B/op	      47 allocs/op
+BenchmarkValidate/1000-12        	   12386	     95415 ns/op	    2777 B/op	      47 allocs/op
+BenchmarkValidate/10000-12       	    1114	   1082635 ns/op	    2780 B/op	      47 allocs/op
+PASS
+ok  	github.com/dostrovskiy/otus-golang-home-work/hw09_struct_validator	4.867s
