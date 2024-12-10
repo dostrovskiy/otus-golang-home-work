@@ -22,6 +22,7 @@ linters-settings:
         allow:
           - $gostd
           - github.com/stretchr/testify
+          - github.com/google/uuid
           
 issues:
   exclude-rules:
