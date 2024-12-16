@@ -32,11 +32,11 @@ NC'
 fileEquals /tmp/telnet.out "${expected_telnet_out}"
 
 # 2. SIGINT
-(echo -e "Hello\n" && cat) | nc -l localhost 4242 &
+cat | nc -l localhost 4242 &
 NC_PID=$!
 
 sleep 1
-(echo -e "I\nam\nTELNET client\n" && cat) | ./go-telnet --timeout=5s localhost 4242 &
+(sleep 5) | ./go-telnet --timeout=5s localhost 4242 &
 TL_PID=$!
 
 sleep 1
