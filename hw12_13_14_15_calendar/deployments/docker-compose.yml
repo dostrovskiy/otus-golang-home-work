@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  pdb:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5430:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - calendar-network
+
+  migrations:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/migrations/Dockerfile
+    environment:
+      DB_HOST: pdb
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: calendar_db
+      DB_STRING: postgres://user:password@pdb:5432/calendar_db?sslmode=disable
+    depends_on:
+      - pdb
+    networks:
+      - calendar-network
+
+  calendar:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/calendar/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - migrations
+    networks:
+      - calendar-network
+
+volumes:
+  db-data:
+
+networks:
+  calendar-network:
