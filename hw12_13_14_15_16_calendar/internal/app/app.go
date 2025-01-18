@@ -7,17 +7,16 @@ import (
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 )
+type App struct {
+	logger  Logger
+	storage Storage
+}
 
 type Logger interface {
 	Error(format string, a ...any)
 	Warn(format string, a ...any)
 	Info(format string, a ...any)
 	Debug(format string, a ...any)
-}
-
-type App struct {
-	logger  Logger
-	storage Storage
 }
 
 type Storage interface {
