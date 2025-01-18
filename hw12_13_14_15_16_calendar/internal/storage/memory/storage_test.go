@@ -26,7 +26,7 @@ func TestStorage(t *testing.T) {
 
 		got, err := store.Get(event.ID)
 		require.NoError(t, err)
-		require.Equal(t, &event, got, "expected %v, got %v", event, got)
+		require.Equal(t, event, got, "expected %v, got %v", event, got)
 
 		events, err := store.GetForPeriod(time.Now(), time.Now().Add(time.Hour))
 		require.NoError(t, err)
