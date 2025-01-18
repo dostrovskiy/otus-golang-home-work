@@ -16,9 +16,10 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - github.com/google/uuid
           - github.com/spf13/viper
           - github.com/jmoiron/sqlx
-          - github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar
+          - github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar
       test:
         files:
           - "$test"
@@ -26,7 +27,7 @@ linters-settings:
           - $gostd
           - github.com/google/uuid
           - github.com/stretchr/testify
-          - github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar
+          - github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar
 issues:    
   exclude-dirs:
     # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
@@ -45,10 +46,10 @@ linters:
   disable-all: true
   enable:
     - asciicheck
+    - bodyclose
     - depguard
     - dogsled
     - dupl
-    - bodyclose
     - durationcheck
     - errorlint
     - exhaustive
