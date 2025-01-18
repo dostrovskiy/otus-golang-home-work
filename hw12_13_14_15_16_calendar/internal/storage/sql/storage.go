@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/storage"
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v4/stdlib" //nolint
 	"github.com/jmoiron/sqlx"
@@ -22,14 +22,23 @@ func New(dsn string) *Storage {
 	}
 }
 
-func (s *Storage) Add(event storage.Event) error {
+func (s *Storage) Add(event *storage.Event) error {
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
 	_, err := s.db.NamedExec(
 		`insert into events 
 	       (id, title, event_start, event_end, description, owner_id, notify_before) 
-	     values (:id, :title, :event_start, :event_end, :description, :owner_id, :notify_before)`, &event)
+	     values (:id, :title, :event_start, :event_end, :description, :owner_id, :notify_before)`,
+		map[string]interface{}{
+			"id":            event.ID,
+			"title":         event.Title,
+			"event_start":   event.Start,
+			"event_end":     event.End,
+			"description":   event.Description,
+			"owner_id":      event.OwnerID,
+			"notify_before": event.NotifyBefore,
+		})
 	if err != nil {
 		return fmt.Errorf("error while adding event [%v]: %w", event, err)
 	}
@@ -41,7 +50,7 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) Delete(id string) error {
-	_, err := s.db.NamedExec("delete from events where id = :id", id)
+	_, err := s.db.NamedExec("delete from events where id = :id", map[string]interface{}{"id": id})
 	if err != nil {
 		return fmt.Errorf("error while deleting event by id [%s]: %w", id, err)
 	}
@@ -50,10 +59,9 @@ func (s *Storage) Delete(id string) error {
 
 func (s *Storage) Get(id string) (*storage.Event, error) {
 	rows, err := s.db.NamedQuery(
-		`select id, title, event_start, event_end, 
-	            description, owner_id, notify_before
+		`select id, title, event_start, event_end, description, owner_id, notify_before
 	       from events
-	      where id = :id`, id)
+	      where id = :id`, map[string]interface{}{"id": id})
 	if err != nil {
 		return nil, fmt.Errorf("error while getting event by id [%s]: %w", id, err)
 	}
@@ -70,24 +78,24 @@ func (s *Storage) Get(id string) (*storage.Event, error) {
 	return &event, nil
 }
 
-func (s *Storage) GetForPeriod(start time.Time, end time.Time) ([]storage.Event, error) {
-	rows, err := s.db.NamedQuery(`select id, title, event_start, event_end, 
-	                                     description, owner_id, notify_before
-	                                from events
-								   where event_start >= :start
-								     and event_end   <= :end`, map[string]interface{}{
-		"start": start,
-		"end":   end,
-	})
+func (s *Storage) GetForPeriod(start time.Time, end time.Time) ([]*storage.Event, error) {
+	rows, err := s.db.NamedQuery(
+		`select id, title, event_start, event_end, description, owner_id, notify_before
+		   from events
+		  where event_start <= :end
+			and event_end   >= :start`, map[string]interface{}{
+			"start": start,
+			"end":   end,
+		})
 	if err != nil {
 		return nil, fmt.Errorf("error while getting events for period [%v, %v]: %w", start, end, err)
 	}
 	defer rows.Close()
 
-	var events []storage.Event
+	events := make([]*storage.Event, 0, 10)
 	for rows.Next() {
-		var event storage.Event
-		err = rows.StructScan(&event)
+		event := &storage.Event{}
+		err = rows.StructScan(event)
 		if err != nil {
 			return nil, fmt.Errorf("error while getting events for period [%v, %v]: %w", start, end, err)
 		}
@@ -104,7 +112,7 @@ func (s *Storage) Open(ctx context.Context) (err error) {
 	return s.db.PingContext(ctx)
 }
 
-func (s *Storage) Update(event storage.Event) error {
+func (s *Storage) Update(id string, event *storage.Event) error {
 	_, err := s.db.NamedExec(
 		`update events
 		    set title         = :title,
@@ -113,7 +121,15 @@ func (s *Storage) Update(event storage.Event) error {
 		        description   = :description,
 		        owner_id      = :owner_id,
 		        notify_before = :notify_before
-		  where id = :id`, &event)
+		  where id = :id`, map[string]interface{}{
+			"id":            id,
+			"title":         event.Title,
+			"event_start":   event.Start,
+			"event_end":     event.End,
+			"description":   event.Description,
+			"owner_id":      event.OwnerID,
+			"notify_before": event.NotifyBefore,
+		})
 	if err != nil {
 		return fmt.Errorf("error while updating event [%v]: %w", event, err)
 	}

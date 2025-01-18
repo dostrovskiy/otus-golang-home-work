@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/storage"
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStorage(t *testing.T) {
 	store := New()
 
-	event := storage.Event{
+	event := &storage.Event{
 		ID:    "1",
 		Title: "Event 1",
 		Start: time.Now(),
@@ -30,9 +30,9 @@ func TestStorage(t *testing.T) {
 
 		events, err := store.GetForPeriod(time.Now(), time.Now().Add(time.Hour))
 		require.NoError(t, err)
-		require.Equal(t, []storage.Event{event}, events, "expected %v, got %v", []storage.Event{event}, events)
+		require.Equal(t, []*storage.Event{event}, events, "expected %v, got %v", []*storage.Event{event}, events)
 
-		err = store.Update(event)
+		err = store.Update("1", event)
 		require.NoError(t, err)
 
 		got, err = store.Get("2")
@@ -61,7 +61,7 @@ func TestStorageMultithread(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for i := g * cnt; i < g*cnt+cnt; i++ {
-					event := storage.Event{
+					event := &storage.Event{
 						ID:    strconv.Itoa(i),
 						Title: "Event " + strconv.Itoa(i),
 						Start: time.Now(),
@@ -80,7 +80,7 @@ func TestStorageMultithread(t *testing.T) {
 		store := New()
 		cnt := eventCount / workerCount
 		for i := 0; i < eventCount; i++ {
-			event := storage.Event{
+			event := &storage.Event{
 				ID:    strconv.Itoa(i),
 				Title: "Event " + strconv.Itoa(i),
 				Start: time.Now(),

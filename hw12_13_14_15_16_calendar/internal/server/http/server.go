@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 )
 
 type Server struct {
@@ -21,11 +23,16 @@ type Logger interface {
 	Debug(format string, a ...any)
 }
 
-type Application interface { // TODO
+type Application interface {
+	GetEvent(ctx context.Context, id string) (*storage.Event, error)
+	CreateEvent(ctx context.Context, event *storage.Event) error
+	UpdateEvent(ctx context.Context, id string, event *storage.Event) error
+	DeleteEvent(ctx context.Context, id string) error
+	FindEventsForPeriod(ctx context.Context, start time.Time, end time.Time) ([]*storage.Event, error)
 }
 
 func NewServer(logger Logger, app Application) *Server {
-	return &Server{logger: logger, app: app, hr: NewHandler(logger), mw: NewMiddleware(logger)}
+	return &Server{logger: logger, app: app, hr: NewHandler(logger, app), mw: NewMiddleware(logger)}
 }
 
 func (s *Server) routes() *http.ServeMux {

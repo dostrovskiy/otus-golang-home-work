@@ -9,12 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/app"
-	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/server/http"
-	storage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_calendar/internal/storage/sql"
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/app"
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/logger"
+	internalhttp "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/server/http"
+	memorystorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage/memory"
+	sqlstorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -72,7 +71,7 @@ func main() {
 	}
 }
 
-func newEventStorage(config *Config) (storage.EventStorage, error) {
+func newEventStorage(config *Config) (app.Storage, error) {
 	switch config.DataSource.StorageType {
 	case "memory":
 		return memorystorage.New(), nil
