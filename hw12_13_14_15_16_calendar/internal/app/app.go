@@ -7,6 +7,7 @@ import (
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 )
+
 type App struct {
 	logger  Logger
 	storage Storage
@@ -20,10 +21,10 @@ type Logger interface {
 }
 
 type Storage interface {
-	Add(event *storage.Event) error
+	Add(event *storage.Event) (*storage.Event, error)
 	Get(id string) (*storage.Event, error)
 	GetForPeriod(start, end time.Time) ([]*storage.Event, error)
-	Update(id string, event *storage.Event) error
+	Update(id string, event *storage.Event) (*storage.Event, error)
 	Delete(id string) error
 	Close() error
 }
@@ -32,7 +33,7 @@ func New(logger Logger, storage Storage) *App {
 	return &App{logger: logger, storage: storage}
 }
 
-func (a *App) CreateEvent(_ context.Context, event *storage.Event) error {
+func (a *App) CreateEvent(_ context.Context, event *storage.Event) (*storage.Event, error) {
 	a.logger.Debug(fmt.Sprintf("App create event %v", event))
 	return a.storage.Add(event)
 }
@@ -47,7 +48,7 @@ func (a *App) FindEventsForPeriod(_ context.Context, start time.Time, end time.T
 	return a.storage.GetForPeriod(start, end)
 }
 
-func (a *App) UpdateEvent(_ context.Context, id string, event *storage.Event) error {
+func (a *App) UpdateEvent(_ context.Context, id string, event *storage.Event) (*storage.Event, error) {
 	return a.storage.Update(id, event)
 }
 

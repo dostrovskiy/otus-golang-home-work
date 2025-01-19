@@ -21,7 +21,7 @@ func TestStorage(t *testing.T) {
 	}
 
 	t.Run("basic crud", func(t *testing.T) {
-		err := store.Add(event)
+		_, err := store.Add(event)
 		require.NoError(t, err)
 
 		got, err := store.Get(event.ID)
@@ -32,18 +32,18 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []*storage.Event{event}, events, "expected %v, got %v", []*storage.Event{event}, events)
 
-		err = store.Update("1", event)
+		_, err = store.Update("1", event)
 		require.NoError(t, err)
 
 		got, err = store.Get("2")
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, got)
 
 		err = store.Delete(event.ID)
 		require.NoError(t, err)
 
 		got, err = store.Get(event.ID)
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, got)
 	})
 }
@@ -67,7 +67,7 @@ func TestStorageMultithread(t *testing.T) {
 						Start: time.Now(),
 						End:   time.Now().Add(time.Hour),
 					}
-					err := store.Add(event)
+					_, err := store.Add(event)
 					require.NoError(t, err)
 				}
 			}()
@@ -86,7 +86,7 @@ func TestStorageMultithread(t *testing.T) {
 				Start: time.Now(),
 				End:   time.Now().Add(time.Hour),
 			}
-			err := store.Add(event)
+			_, err := store.Add(event)
 			require.NoError(t, err)
 		}
 		wg.Add(workerCount)

@@ -11,6 +11,21 @@ import (
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 )
 
+var (
+	ErrPostingEvent = func(event Event, err error) error {
+		return fmt.Errorf("error while posting event [%+v]: %w", event, err)
+	}
+	ErrPuttingEvent = func(event Event, err error) error {
+		return fmt.Errorf("error while putting event [%+v]: %w", event, err)
+	}
+	ErrGettingEventByID = func(id string, err error) error {
+		return fmt.Errorf("error while getting event by id [%s]: %w", id, err)
+	}
+	ErrGettingEventByParams = func(params GetEventsByPeriodParams, err error) error {
+		return fmt.Errorf("error while getting events by period [%+v]: %w", params, err)
+	}
+)
+
 type Server struct {
 	app        Application
 	httpServer *http.Server
@@ -27,8 +42,8 @@ type Logger interface {
 
 type Application interface {
 	GetEvent(ctx context.Context, id string) (*storage.Event, error)
-	CreateEvent(ctx context.Context, event *storage.Event) error
-	UpdateEvent(ctx context.Context, id string, event *storage.Event) error
+	CreateEvent(ctx context.Context, event *storage.Event) (*storage.Event, error)
+	UpdateEvent(ctx context.Context, id string, event *storage.Event) (*storage.Event, error)
 	DeleteEvent(ctx context.Context, id string) error
 	FindEventsForPeriod(ctx context.Context, start time.Time, end time.Time) ([]*storage.Event, error)
 }
@@ -87,23 +102,36 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func mapHttpToStorageEvent(e Event) (*storage.Event, error) {
-	notifyBefore, err := time.ParseDuration(*e.NotifyBefore)
-	if err != nil {
-		return nil, fmt.Errorf("error while parsing duration [%s]: %w", *e.NotifyBefore, err)
+func mapHTTPToStorageEvent(e Event) (*storage.Event, error) {
+	var notifyBefore time.Duration
+	var err error
+	notifyBeforeStr := deref(e.NotifyBefore)
+	if notifyBeforeStr != "" {
+		notifyBefore, err = time.ParseDuration(deref(e.NotifyBefore))
+		if err != nil {
+			return nil, fmt.Errorf("error while parsing duration [%s]: %w", deref(e.NotifyBefore), err)
+		}
 	}
 	return &storage.Event{
-		ID:           *e.Id,
-		Title:        *e.Title,
-		Start:        *e.Start,
-		End:          *e.End,
-		Description:  *e.Description,
-		OwnerID:      *e.OwnerId,
+		ID:           deref(e.Id),
+		Title:        deref(e.Title),
+		Start:        deref(e.Start),
+		End:          deref(e.End),
+		Description:  deref(e.Description),
+		OwnerID:      deref(e.OwnerId),
 		NotifyBefore: notifyBefore,
 	}, nil
 }
 
-func mapStorageToHttpEvent(e storage.Event) (Event, error) {
+func deref[T any](p *T) T {
+	if p == nil {
+		var zero T
+		return zero
+	}
+	return *p
+}
+
+func mapStorageToHTTPEvent(e storage.Event) (Event, error) { //nolint:unparam
 	notifyBefore := e.NotifyBefore.String()
 	return Event{
 		Id:           &e.ID,
@@ -116,10 +144,10 @@ func mapStorageToHttpEvent(e storage.Event) (Event, error) {
 	}, nil
 }
 
-func mapStorageToHttpEvents(es []*storage.Event) ([]Event, error) {
+func mapStorageToHTTPEvents(es []*storage.Event) ([]Event, error) {
 	events := make([]Event, 0, len(es))
 	for _, e := range es {
-		event, err := mapStorageToHttpEvent(*e)
+		event, err := mapStorageToHTTPEvent(*e)
 		if err != nil {
 			return nil, err
 		}
@@ -129,57 +157,68 @@ func mapStorageToHttpEvents(es []*storage.Event) ([]Event, error) {
 }
 
 func (s *Server) PostEvent(ctx context.Context, request PostEventRequestObject) (PostEventResponseObject, error) {
-	event, err := mapHttpToStorageEvent(*request.Body)
+	event, err := mapHTTPToStorageEvent(*request.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error while posting event [%+v]: %w", *request.Body, err)
+		return nil, ErrPostingEvent(*request.Body, err)
 	}
-	err = s.app.CreateEvent(ctx, event)
+	storageEvent, err := s.app.CreateEvent(ctx, event)
 	if err != nil {
-		return nil, err
+		return nil, ErrPostingEvent(*request.Body, err)
 	}
-	return PostEvent201JSONResponse(*request.Body), nil
+	httpEvent, err := mapStorageToHTTPEvent(*storageEvent)
+	if err != nil {
+		return nil, ErrPostingEvent(*request.Body, err)
+	}
+	return PostEvent201JSONResponse(httpEvent), nil
 }
 
-func (s *Server) DeleteEventId(ctx context.Context, request DeleteEventIdRequestObject) (DeleteEventIdResponseObject, error) {
+func (s *Server) DeleteEventId(ctx context.Context, request DeleteEventIdRequestObject) (DeleteEventIdResponseObject, error) { //nolint:lll,revive,stylecheck
 	return DeleteEventId204Response{}, s.app.DeleteEvent(ctx, request.Id)
 }
 
-func (s *Server) GetEventId(ctx context.Context, request GetEventIdRequestObject) (GetEventIdResponseObject, error) {
+func (s *Server) GetEventId(ctx context.Context, request GetEventIdRequestObject) (GetEventIdResponseObject, error) { //nolint:revive,lll,stylecheck
 	sevent, err := s.app.GetEvent(ctx, request.Id)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting event by id [%s]: %w", request.Id, err)
+		return nil, ErrGettingEventByID(request.Id, err)
 	}
-	event, err := mapStorageToHttpEvent(*sevent)
+	if sevent == nil {
+		return GetEventId200JSONResponse{}, nil
+	}
+	event, err := mapStorageToHTTPEvent(*sevent)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting event by id [%s]: %w", request.Id, err)
+		return nil, ErrGettingEventByID(request.Id, err)
 	}
 	return GetEventId200JSONResponse(event), nil
 }
 
-func (s *Server) PutEventId(ctx context.Context, request PutEventIdRequestObject) (PutEventIdResponseObject, error) {
-	event, err := mapHttpToStorageEvent(*request.Body)
+func (s *Server) PutEventId(ctx context.Context, request PutEventIdRequestObject) (PutEventIdResponseObject, error) { //nolint:revive,lll,stylecheck
+	event, err := mapHTTPToStorageEvent(*request.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error while putting event [%+v]: %w", *request.Body, err)
+		return nil, ErrPuttingEvent(*request.Body, err)
 	}
-	err = s.app.UpdateEvent(ctx, event.ID, event)
+	storageEvent, err := s.app.UpdateEvent(ctx, request.Id, event)
 	if err != nil {
-		return nil, fmt.Errorf("error while putting event [%+v]: %w", *request.Body, err)
+		return nil, ErrPuttingEvent(*request.Body, err)
 	}
-	return PutEventId200JSONResponse(*request.Body), nil
+	httpEvent, err := mapStorageToHTTPEvent(*storageEvent)
+	if err != nil {
+		return nil, ErrPuttingEvent(*request.Body, err)
+	}
+	return PutEventId200JSONResponse(httpEvent), nil
 }
 
-func (s *Server) GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error) {
+func (s *Server) GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error) { //nolint:lll
 	events, err := s.app.FindEventsForPeriod(ctx, request.Params.Start, request.Params.End)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting events by period [%+v]: %w", request.Params, err)
+		return nil, ErrGettingEventByParams(request.Params, err)
 	}
-	hevents, err := mapStorageToHttpEvents(events)
+	hevents, err := mapStorageToHTTPEvents(events)
 	if err != nil {
-		return nil, fmt.Errorf("error while getting events by period [%+v]: %w", request.Params, err)
+		return nil, ErrGettingEventByParams(request.Params, err)
 	}
 	return GetEventsByPeriod200JSONResponse(hevents), nil
 }
 
-func (s *Server) GetHello(ctx context.Context, request GetHelloRequestObject) (GetHelloResponseObject, error) {
+func (s *Server) GetHello(_ context.Context, _ GetHelloRequestObject) (GetHelloResponseObject, error) {
 	return GetHello204Response{}, nil
 }

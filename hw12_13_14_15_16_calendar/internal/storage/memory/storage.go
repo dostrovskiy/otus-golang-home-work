@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
+	"github.com/google/uuid"
 )
 
 type Storage struct {
@@ -23,14 +24,17 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) Add(event *storage.Event) error {
+func (s *Storage) Add(event *storage.Event) (*storage.Event, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if event.ID == "" {
+		event.ID = uuid.New().String()
+	}
 	if _, ok := s.events[event.ID]; ok {
-		return fmt.Errorf("event with id [%s] already exists", event.ID)
+		return nil, fmt.Errorf("event with id [%s] already exists", event.ID)
 	}
 	s.events[event.ID] = event
-	return nil
+	return event, nil
 }
 
 func (s *Storage) Get(id string) (*storage.Event, error) {
@@ -38,7 +42,7 @@ func (s *Storage) Get(id string) (*storage.Event, error) {
 	defer s.mu.RUnlock()
 	event, ok := s.events[id]
 	if !ok {
-		return nil, fmt.Errorf("event not found by id: %s", id)
+		return nil, nil
 	}
 	return event, nil
 }
@@ -55,14 +59,14 @@ func (s *Storage) GetForPeriod(start time.Time, end time.Time) ([]*storage.Event
 	return events, nil
 }
 
-func (s *Storage) Update(id string, event *storage.Event) error {
+func (s *Storage) Update(id string, event *storage.Event) (*storage.Event, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.events[id]; !ok {
-		return fmt.Errorf("event with id [%s] not exists", id)
+		return nil, fmt.Errorf("event with id [%s] not exists", id)
 	}
 	s.events[id] = event
-	return nil
+	return event, nil
 }
 
 func (s *Storage) Delete(id string) error {

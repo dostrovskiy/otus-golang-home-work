@@ -22,7 +22,7 @@ func New(dsn string) *Storage {
 	}
 }
 
-func (s *Storage) Add(event *storage.Event) error {
+func (s *Storage) Add(event *storage.Event) (*storage.Event, error) {
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
@@ -40,9 +40,9 @@ func (s *Storage) Add(event *storage.Event) error {
 			"notify_before": event.NotifyBefore,
 		})
 	if err != nil {
-		return fmt.Errorf("error while adding event [%v]: %w", event, err)
+		return nil, fmt.Errorf("error while adding event [%v]: %w", event, err)
 	}
-	return nil
+	return event, nil
 }
 
 func (s *Storage) Close() error {
@@ -112,7 +112,8 @@ func (s *Storage) Open(ctx context.Context) (err error) {
 	return s.db.PingContext(ctx)
 }
 
-func (s *Storage) Update(id string, event *storage.Event) error {
+func (s *Storage) Update(id string, event *storage.Event) (*storage.Event, error) {
+	event.ID = id
 	_, err := s.db.NamedExec(
 		`update events
 		    set title         = :title,
@@ -122,7 +123,7 @@ func (s *Storage) Update(id string, event *storage.Event) error {
 		        owner_id      = :owner_id,
 		        notify_before = :notify_before
 		  where id = :id`, map[string]interface{}{
-			"id":            id,
+			"id":            event.ID,
 			"title":         event.Title,
 			"event_start":   event.Start,
 			"event_end":     event.End,
@@ -131,7 +132,7 @@ func (s *Storage) Update(id string, event *storage.Event) error {
 			"notify_before": event.NotifyBefore,
 		})
 	if err != nil {
-		return fmt.Errorf("error while updating event [%v]: %w", event, err)
+		return nil, fmt.Errorf("error while updating event [%+v]: %w", event, err)
 	}
-	return nil
+	return event, nil
 }
