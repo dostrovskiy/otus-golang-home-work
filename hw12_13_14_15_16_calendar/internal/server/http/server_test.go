@@ -60,7 +60,7 @@ func TestServer(t *testing.T) {
 		err = json.NewDecoder(get.Body).Decode(&getEvent)
 		require.NoError(t, err, "error unmarshaling get event response")
 		require.Equal(t, event.Title, getEvent.Title)
-		require.Equal(t, event.Start.Round(0), getEvent.Start.Round(0))
+		require.True(t, event.Start.Round(0).Equal(getEvent.Start.Round(0)), "expected %v, got %v", event.Start.Round(0), getEvent.Start.Round(0))
 
 		newTitle := "updated event"
 		newStart := time.Now().Add(5 * time.Hour)
@@ -76,7 +76,7 @@ func TestServer(t *testing.T) {
 		err = json.NewDecoder(upd.Body).Decode(&updEvent)
 		require.NoError(t, err, "error unmarshaling update event response")
 		require.Equal(t, newEvent.Title, updEvent.Title)
-		require.Equal(t, newEvent.Start.Round(0), updEvent.Start.Round(0))
+		require.True(t, newEvent.Start.Round(0).Equal(updEvent.Start.Round(0)), "expected %v, got %v", newEvent.Start.Round(0), updEvent.Start.Round(0))
 
 		del := testutil.NewRequest().Delete(fmt.Sprintf("/event/%s", id)).GoWithHTTPHandler(t, mux).Recorder
 		require.Equal(t, http.StatusNoContent, del.Code)
