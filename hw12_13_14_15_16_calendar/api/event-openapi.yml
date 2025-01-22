@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: Event API
+  version: 1.0.0
+  description: API для управления событиями календаря.
+
+paths:
+  /hello:
+    get:
+      summary: Приветствие
+      responses:
+        '204':
+          description: Страница приветствия
+  /events/by-period:
+    get:
+      summary: Получить список событий за период start - end
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Список событий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+  /event:
+    post:
+      summary: Создать событие
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '201':
+          description: Событие создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+  
+  /event/{id}:
+    get:
+      summary: Получить событие по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Детали события
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Событие не найдено
+    put:
+      summary: Обновить событие по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Событие обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Событие не найдено
+    delete:
+      summary: Удалить событие по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Событие удалено
+        '404':
+          description: Событие не найдено
+
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        description:
+          type: string
+        owner_id:
+          type: string
+        notify_before:
+          type: string
+          format: duration

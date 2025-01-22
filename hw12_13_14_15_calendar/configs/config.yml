@@ -1,8 +1,0 @@
-server:
-  address: ":5000"
-datasource:
-  storagetype: "memory"
-  # storagetype: "sql"
-  # dsn: "postgres://user:password@pdb:5432/calendar_db?sslmode=disable"
-logger:
-  level: "INFO" # "ERROR", "WARN", "INFO", "DEBUG"
