@@ -12,8 +12,6 @@ import (
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/logger"
 	internalhttp "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/server/http"
-	memorystorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage/memory"
-	sqlstorage "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -38,16 +36,16 @@ func main() {
 
 	log := logger.New(config.Logger.Level)
 
-	storage, err := newEventStorage(config)
+	storage, err := app.NewEventStorage(config.DataSource.StorageType, config.DataSource.Dsn)
 	if err != nil {
 		log.Error("failed to create event storage:", err.Error())
 		return
 	}
 	defer storage.Close()
 
-	calendar := app.New(log, storage)
+	app := app.New(log, storage)
 
-	server := internalhttp.NewServer(log, calendar)
+	server := internalhttp.NewServer(log, app)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -68,20 +66,5 @@ func main() {
 		log.Error("failed to start http server: %s", err.Error())
 		cancel()
 		return
-	}
-}
-
-func newEventStorage(config *Config) (app.Storage, error) {
-	switch config.DataSource.StorageType {
-	case "memory":
-		return memorystorage.New(), nil
-	case "sql":
-		sqlstorage := sqlstorage.New(config.DataSource.Dsn)
-		if err := sqlstorage.Open(context.Background()); err != nil {
-			return nil, fmt.Errorf("failed to connect to storage: %s", err.Error())
-		}
-		return sqlstorage, nil
-	default:
-		return nil, fmt.Errorf("unknown storage type: %s", config.DataSource.StorageType)
 	}
 }

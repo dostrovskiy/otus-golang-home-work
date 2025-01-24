@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
-	"github.com/google/uuid"
 )
 
 type Storage struct {
@@ -27,9 +26,6 @@ func New() *Storage {
 func (s *Storage) Add(event *storage.Event) (*storage.Event, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if event.ID == "" {
-		event.ID = uuid.New().String()
-	}
 	if _, ok := s.events[event.ID]; ok {
 		return nil, fmt.Errorf("event with id [%s] already exists", event.ID)
 	}
@@ -47,12 +43,25 @@ func (s *Storage) Get(id string) (*storage.Event, error) {
 	return event, nil
 }
 
-func (s *Storage) GetForPeriod(start time.Time, end time.Time) ([]*storage.Event, error) {
+func (s *Storage) FindByPeriod(start time.Time, end time.Time) ([]*storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	events := make([]*storage.Event, 0, len(s.events))
 	for _, event := range s.events {
 		if event.Start.Before(end) && event.End.After(start) {
+			events = append(events, event)
+		}
+	}
+	return events, nil
+}
+
+func (s *Storage) FindForNotify(notifyDate time.Time, notified bool) ([]*storage.Event, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	events := make([]*storage.Event, 0, len(s.events))
+	for _, event := range s.events {
+		if event.NotifyStart.Before(notifyDate) &&
+			event.Start.After(notifyDate) && event.Notified == notified {
 			events = append(events, event)
 		}
 	}
@@ -74,4 +83,8 @@ func (s *Storage) Delete(id string) error {
 	defer s.mu.Unlock()
 	delete(s.events, id)
 	return nil
+}
+
+func (s *Storage) AddNotification(notification *storage.Notification) (*storage.Notification, error) {
+	return notification, nil
 }
