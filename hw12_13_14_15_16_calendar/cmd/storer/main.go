@@ -39,7 +39,8 @@ func main() {
 
 	app := app.New(log, storage)
 
-	consumer := internalmessagebroker.NewConsumer(app, log, config.Kafka.Brokers, config.Kafka.Topic, config.Kafka.MaxRetries)
+	consumer := internalmessagebroker.NewConsumer(app, log, config.Kafka.Brokers, config.Kafka.Topic,
+		config.Kafka.MaxRetries)
 
 	log.Info("Storer is starting\nConfig: %+v", config)
 
