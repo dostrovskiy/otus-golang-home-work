@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.4
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 22181:2181
+    networks:
+      - calendar-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - calendar-network
+
+  pdb:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5430:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - calendar-network
+
+  migrations:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/migrations/Dockerfile
+    environment:
+      DB_HOST: pdb
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: calendar_db
+      DB_STRING: postgres://user:password@pdb:5432/calendar_db?sslmode=disable
+    depends_on:
+      - pdb
+    networks:
+      - calendar-network
+
+  calendar:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/calendar/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - calendar-network
+
+  scheduler:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/scheduler/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - calendar-network
+
+  storer:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/storer/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - calendar-network
+
+  integration_tests:
+    build:
+      context: .. # parent build context directory over this dosker-compose file
+      dockerfile: build/integrationtests/Dockerfile
+    depends_on:
+      calendar:
+        condition: service_started
+      scheduler:
+        condition: service_started
+      storer:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: pdb
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: calendar_db
+      DB_STRING: postgres://user:password@pdb:5432/calendar_db?sslmode=disable
+    networks:
+      - calendar-network
+
+volumes:
+  db-data:
+
+networks:
+  calendar-network:

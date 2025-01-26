@@ -34,8 +34,10 @@ lint: install-lint-deps
 down:
 	docker-compose -f ./deployments/docker-compose.yml down
 
-up: down
+up: 
 	docker-compose -f ./deployments/docker-compose.yml up -d --build
+
+restart: down up
 
 install-oapigen-deps:
 	(which oapi-codegen > /dev/null) || go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
@@ -72,4 +74,19 @@ run-storer-img: build-storer-img
 
 build: build-calendar build-scheduler build-storer
 
-.PHONY: build run build-img run-img version test lint comp down
+integration-tests:
+	set -e ;\
+	docker-compose -f ./integrationtests/docker-compose.test.yml up --build -d ;\
+	test_status_code=0 ;\
+	docker-compose -f ./integrationtests/docker-compose.test.yml run integration_tests go test || test_status_code=$$? ;\
+	docker-compose -f ./integrationtests/docker-compose.test.yml down ;\
+	exit $$test_status_code ;
+
+integration-tests-cleanup:
+	docker-compose -f ./integrationtests/docker-compose.test.yml down \
+        --rmi local \
+		--volumes \
+		--remove-orphans \
+		--timeout 60;
+
+.PHONY: build run build-img run-img version test lint comp up down restart
