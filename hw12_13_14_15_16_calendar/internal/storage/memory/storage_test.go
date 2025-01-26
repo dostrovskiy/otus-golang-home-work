@@ -28,7 +28,7 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, event, got, "expected %v, got %v", event, got)
 
-		events, err := store.GetForPeriod(time.Now(), time.Now().Add(time.Hour))
+		events, err := store.FindByPeriod(time.Now(), time.Now().Add(time.Hour))
 		require.NoError(t, err)
 		require.Equal(t, []*storage.Event{event}, events, "expected %v, got %v", []*storage.Event{event}, events)
 

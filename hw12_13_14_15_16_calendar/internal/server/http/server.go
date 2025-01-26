@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
 )
 
@@ -27,7 +28,7 @@ var (
 )
 
 type Server struct {
-	app        Application
+	app        app.Application
 	httpServer *http.Server
 	logger     Logger
 	mw         *Middleware
@@ -40,17 +41,9 @@ type Logger interface {
 	Debug(format string, a ...any)
 }
 
-type Application interface {
-	GetEvent(ctx context.Context, id string) (*storage.Event, error)
-	CreateEvent(ctx context.Context, event *storage.Event) (*storage.Event, error)
-	UpdateEvent(ctx context.Context, id string, event *storage.Event) (*storage.Event, error)
-	DeleteEvent(ctx context.Context, id string) error
-	FindEventsForPeriod(ctx context.Context, start time.Time, end time.Time) ([]*storage.Event, error)
-}
-
 var _ StrictServerInterface = (*Server)(nil)
 
-func NewServer(logger Logger, app Application) *Server {
+func NewServer(logger Logger, app app.Application) *Server {
 	return &Server{logger: logger, app: app, mw: NewMiddleware(logger)}
 }
 
@@ -120,6 +113,8 @@ func mapHTTPToStorageEvent(e Event) (*storage.Event, error) {
 		Description:  deref(e.Description),
 		OwnerID:      deref(e.OwnerId),
 		NotifyBefore: notifyBefore,
+		NotifyStart:  deref(e.NotifyStart),
+		Notified:     false,
 	}, nil
 }
 
@@ -141,6 +136,8 @@ func mapStorageToHTTPEvent(e storage.Event) (Event, error) { //nolint:unparam
 		Description:  &e.Description,
 		OwnerId:      &e.OwnerID,
 		NotifyBefore: &notifyBefore,
+		NotifyStart:  &e.NotifyStart,
+		Notified:     &e.Notified,
 	}, nil
 }
 
@@ -208,7 +205,7 @@ func (s *Server) PutEventId(ctx context.Context, request PutEventIdRequestObject
 }
 
 func (s *Server) GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error) { //nolint:lll
-	events, err := s.app.FindEventsForPeriod(ctx, request.Params.Start, request.Params.End)
+	events, err := s.app.FindEventsByPeriod(ctx, request.Params.Start, request.Params.End)
 	if err != nil {
 		return nil, ErrGettingEventByParams(request.Params, err)
 	}
@@ -221,4 +218,16 @@ func (s *Server) GetEventsByPeriod(ctx context.Context, request GetEventsByPerio
 
 func (s *Server) GetHello(_ context.Context, _ GetHelloRequestObject) (GetHelloResponseObject, error) {
 	return GetHello204Response{}, nil
+}
+
+func (s *Server) GetEventsForNotify(ctx context.Context, request GetEventsForNotifyRequestObject) (GetEventsForNotifyResponseObject, error) { //nolint:lll
+	events, err := s.app.FindEventsForNotify(ctx, request.Params.NotifyDate, request.Params.Notified)
+	if err != nil {
+		return nil, err
+	}
+	hevents, err := mapStorageToHTTPEvents(events)
+	if err != nil {
+		return nil, err
+	}
+	return GetEventsForNotify200JSONResponse(hevents), nil
 }

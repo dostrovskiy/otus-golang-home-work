@@ -36,6 +36,30 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
+  /events/for-notify:
+    get:
+      summary: Получить список событий для отправки уведомлений
+      parameters:
+        - name: notify-date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: notified
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Список событий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
   /event:
     post:
       summary: Создать событие
@@ -130,3 +154,8 @@ components:
         notify_before:
           type: string
           format: duration
+        notify_start:
+          type: string
+          format: date-time
+        notified:
+          type: boolean

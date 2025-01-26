@@ -4,22 +4,22 @@ DOCKER_IMG="calendar:develop"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
-build:
+build-calendar:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
-run: build
-	$(BIN) -config ./configs/config.yml
+run-calendar: build-calendar
+	$(BIN) -config ./configs/calendar-config.yml
 
-build-img:
+build-calendar-img:
 	docker build \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
 		-t $(DOCKER_IMG) \
-		-f build/Dockerfile .
+		-f build/calendar/Dockerfile .
 
-run-img: build-img
+run-calendar-img: build-calendar-img
 	docker run $(DOCKER_IMG)
 
-version: build
+version: build-calendar
 	$(BIN) version
 
 test:
@@ -34,7 +34,7 @@ lint: install-lint-deps
 down:
 	docker-compose -f ./deployments/docker-compose.yml down
 
-comp: down
+up: down
 	docker-compose -f ./deployments/docker-compose.yml up -d --build
 
 install-oapigen-deps:
@@ -42,5 +42,34 @@ install-oapigen-deps:
 
 target: install-oapigen-deps
 	go generate ./internal/server/http
+
+build-scheduler:
+	go build -v -o ./bin/scheduler -ldflags "$(LDFLAGS)" ./cmd/scheduler
+
+run-scheduler: build-scheduler
+	./bin/scheduler -config ./configs/scheduler-config.yml
+
+build-scheduler-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t scheduler:develop \
+		-f build/scheduler/Dockerfile .
+
+build-storer:
+	go build -v -o ./bin/storer -ldflags "$(LDFLAGS)" ./cmd/storer
+
+run-storer: build-storer
+	./bin/storer -config ./configs/storer-config.yml
+
+build-storer-img:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t storer:develop \
+		-f build/storer/Dockerfile .
+
+run-storer-img: build-storer-img
+	docker run storer:develop
+
+build: build-calendar build-scheduler build-storer
 
 .PHONY: build run build-img run-img version test lint comp down

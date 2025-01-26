@@ -28,7 +28,9 @@ type Event struct {
 	Description  *string    `json:"description,omitempty"`
 	End          *time.Time `json:"end,omitempty"`
 	Id           *string    `json:"id,omitempty"`
+	Notified     *bool      `json:"notified,omitempty"`
 	NotifyBefore *string    `json:"notify_before,omitempty"`
+	NotifyStart  *time.Time `json:"notify_start,omitempty"`
 	OwnerId      *string    `json:"owner_id,omitempty"`
 	Start        *time.Time `json:"start,omitempty"`
 	Title        *string    `json:"title,omitempty"`
@@ -38,6 +40,12 @@ type Event struct {
 type GetEventsByPeriodParams struct {
 	Start time.Time `form:"start" json:"start"`
 	End   time.Time `form:"end" json:"end"`
+}
+
+// GetEventsForNotifyParams defines parameters for GetEventsForNotify.
+type GetEventsForNotifyParams struct {
+	NotifyDate time.Time `form:"notify-date" json:"notify-date"`
+	Notified   bool      `form:"notified" json:"notified"`
 }
 
 // PostEventJSONRequestBody defines body for PostEvent for application/json ContentType.
@@ -63,6 +71,9 @@ type ServerInterface interface {
 	// Получить список событий за период start - end
 	// (GET /events/by-period)
 	GetEventsByPeriod(w http.ResponseWriter, r *http.Request, params GetEventsByPeriodParams)
+	// Получить список событий для отправки уведомлений
+	// (GET /events/for-notify)
+	GetEventsForNotify(w http.ResponseWriter, r *http.Request, params GetEventsForNotifyParams)
 	// Приветствие
 	// (GET /hello)
 	GetHello(w http.ResponseWriter, r *http.Request)
@@ -215,6 +226,55 @@ func (siw *ServerInterfaceWrapper) GetEventsByPeriod(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetEventsForNotify operation middleware
+func (siw *ServerInterfaceWrapper) GetEventsForNotify(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEventsForNotifyParams
+
+	// ------------- Required query parameter "notify-date" -------------
+
+	if paramValue := r.URL.Query().Get("notify-date"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "notify-date"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "notify-date", r.URL.Query(), &params.NotifyDate)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "notify-date", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "notified" -------------
+
+	if paramValue := r.URL.Query().Get("notified"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "notified"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "notified", r.URL.Query(), &params.Notified)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "notified", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEventsForNotify(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHello operation middleware
 func (siw *ServerInterfaceWrapper) GetHello(w http.ResponseWriter, r *http.Request) {
 
@@ -354,6 +414,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/event/{id}", wrapper.GetEventId)
 	m.HandleFunc("PUT "+options.BaseURL+"/event/{id}", wrapper.PutEventId)
 	m.HandleFunc("GET "+options.BaseURL+"/events/by-period", wrapper.GetEventsByPeriod)
+	m.HandleFunc("GET "+options.BaseURL+"/events/for-notify", wrapper.GetEventsForNotify)
 	m.HandleFunc("GET "+options.BaseURL+"/hello", wrapper.GetHello)
 
 	return m
@@ -468,6 +529,23 @@ func (response GetEventsByPeriod200JSONResponse) VisitGetEventsByPeriodResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetEventsForNotifyRequestObject struct {
+	Params GetEventsForNotifyParams
+}
+
+type GetEventsForNotifyResponseObject interface {
+	VisitGetEventsForNotifyResponse(w http.ResponseWriter) error
+}
+
+type GetEventsForNotify200JSONResponse []Event
+
+func (response GetEventsForNotify200JSONResponse) VisitGetEventsForNotifyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetHelloRequestObject struct {
 }
 
@@ -500,6 +578,9 @@ type StrictServerInterface interface {
 	// Получить список событий за период start - end
 	// (GET /events/by-period)
 	GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error)
+	// Получить список событий для отправки уведомлений
+	// (GET /events/for-notify)
+	GetEventsForNotify(ctx context.Context, request GetEventsForNotifyRequestObject) (GetEventsForNotifyResponseObject, error)
 	// Приветствие
 	// (GET /hello)
 	GetHello(ctx context.Context, request GetHelloRequestObject) (GetHelloResponseObject, error)
@@ -676,6 +757,32 @@ func (sh *strictHandler) GetEventsByPeriod(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// GetEventsForNotify operation middleware
+func (sh *strictHandler) GetEventsForNotify(w http.ResponseWriter, r *http.Request, params GetEventsForNotifyParams) {
+	var request GetEventsForNotifyRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEventsForNotify(ctx, request.(GetEventsForNotifyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEventsForNotify")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventsForNotifyResponseObject); ok {
+		if err := validResponse.VisitGetEventsForNotifyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetHello operation middleware
 func (sh *strictHandler) GetHello(w http.ResponseWriter, r *http.Request) {
 	var request GetHelloRequestObject
@@ -703,19 +810,20 @@ func (sh *strictHandler) GetHello(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8RWz04bPxB+ldX8fseFhJbT3kBUbW65VxVashMwyq4X26FaRStBkNpDK3HpuVXVF0hR",
-	"IgKU8ArjN6psh6XJLmkk/vQC68n4G/v7Po/dgxaPU55goiQEPZCtPYxD+/nqEBNlPlLBUxSKoQ1HKFuC",
-	"pYrxxAxVliIEIJVgyS7kPmASmXibizhUEEAUKlxRLEbwy8ksqsRIuGLtbHsH21zgLFpXhLZ0BRh/n6DY",
-	"vgdSqlCo5RemmOpgBVBe5PKdfWwpyE2IJW1e4gY2mg2PhnSlTz19Qjf6iAZ0Rlc0omsam+AxTein/qT7",
-	"Zki/aOzRJQ2mGUMa6CN9ugrFYpwi3kazAT4copCuzNpqfbVu959iEqYMAnhpQz6kodqzotWwEJNL+99I",
-	"aplsRBBAk0vl9PZB4EEXpdrkUWYSWzxR07lhmnZYy86q7UunvzOM+fpfYBsC+K9256ja1E41h225MvBM",
-	"YASBEl20AZnyRDp3vaivPUXRWWHo+x3xNHI6nBvC6ZomVmPZjeNQZLe59kfd159nNKORzXXc1nosyp0H",
-	"OqiwTPGWjds1NSKrjQhjVCgkBG97wMzCjF7gQxLGRm4WwTxd/h9bn3fmuxKV62VPzm/9xG7bOW5iTLS+",
-	"xCy6dn8GdEHD26mzrP2Y4o4rWPPohiZeY8uU28UKN75G9aw81Z/Bcl9opPuOkrmD/4isf6MJXekT/fGv",
-	"vKfdqi7QfXLe/2lrqT97azEDI1TR9x/zjH0tsBerXfQoWdvJVlIUjNs7cuHZk5tZ02VWW+GgiyK784K7",
-	"XhfZYZl7N/er0c2b4sHYDz33TGEslzRGUT0UIszuMcoNja1kl7PKXSxxqu+b6tE5DYzyI31EY5rQ0LPK",
-	"eCue4dBaYQ87Hb5I/zc2YbnbRPfts8Y8aD7YyrbumWl2+lj3rTdPSxsqJ9m7NM9/BwAA//9AUUxPjwoA",
-	"AA==",
+	"H4sIAAAAAAAC/+SWTW/aMBjHv0rk7RgauvXErVX3wmXiPk1VIA+tKxKntukUIaQWpO2wSb3svGnaF2AV",
+	"qPQt/QqPv9Fkm6YFAs3Ulx12gcR5/Nj+/3+2nw5psDBmEURSkEqHiMYOhL55fLUPkdQPMWcxcEnBNAcg",
+	"GpzGkrJIv8okBlIhQnIabZOuSyAKdHuT8dCXpEICX0JJ0hCIOx9Mg9wcEZO0SeH2xzpjLfCj7GuyVYcm",
+	"4zA9Vpv7ZmLugpzJlpA+l8UnyD5GwLcWTPMvc0kqW5CTqJvFsvouNCTp6iYaNdmc3mS9VnVwiOfqyFF9",
+	"vFIHOMBjPMcRXuJYNx5iir/VF9XTr3iBYwfPcDCJGOJAHaijFZJNxrrsrNeqxCX7wIUdZnWlvFI2648h",
+	"8mNKKuSlaXJJ7MsdA4IHGSBMmH+NidG/GpAKqTEhLUMu4bDXBiE3WJDowAaL5KSvH8ct2jC9vF1hmbIQ",
+	"6qfnHJqkQp55N5R6E0Q9m9topdNTrnmRvA2mQcQsEpbYF+XVxxh02hj8eSM8jqwPJ1pwvMTUeCzaYejz",
+	"5DrWfFQ99XXKMxyZWKut16FB1zLQAgnzEm+adjOnamC84X4IErgglfcdQvXEtF/EJZEfartpQGblcm8t",
+	"fZbMD3NSrs0zObv0vlm2JS7VEK0V6IWX9meApzi87jqt2q9J3nGOag5eYepUN/Vw25BD4xuQT6pT+QmQ",
+	"+4Yj1bOSzGz8B1T9B6Z4rvrq8526x+28U6D96Lr/06Ol/ORHi37RRmXn/kPuse9Z7uVuZ2eU8OpJKQZO",
+	"mbkjl+49sZHUbGQ+Cntt4MkNC/Z6XYZDkXu36+Zn13XKvXPfd99TCaEoCEY2us+5nywA5QrHxrKzaedO",
+	"C+zqRV0dPMGBdn6kDnCMKQ4d44xTcrSGt1FoMl6yddbdLLxm/J0NLQSDTVvSZjwaElnZWeAIyurR/4QB",
+	"W3NiqnpZ1Xmmr50+HuMIh5jixXUZOhnJ24FWiy0D4a0JKFZiqJ4ZVVe5nwyOBsZjfQOqQ9UzB9bR3Arn",
+	"g0yB1e3+CQAA//+8WtZM+AwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

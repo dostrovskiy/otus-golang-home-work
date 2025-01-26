@@ -1,0 +1,10 @@
+kafka:
+  brokers: ["kafka:9092"]
+  topic: "event-notifications"
+  maxretries: 5
+datasource:
+  # storagetype: "memory"
+  storagetype: "sql"
+  dsn: "postgres://user:password@pdb:5432/calendar_db?sslmode=disable"
+logger:
+  level: "DEBUG" # "ERROR", "WARN", "INFO", "DEBUG"
