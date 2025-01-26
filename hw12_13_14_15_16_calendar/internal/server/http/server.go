@@ -95,27 +95,18 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func mapHTTPToStorageEvent(e Event) (*storage.Event, error) {
-	var notifyBefore time.Duration
-	var err error
-	notifyBeforeStr := deref(e.NotifyBefore)
-	if notifyBeforeStr != "" {
-		notifyBefore, err = time.ParseDuration(deref(e.NotifyBefore))
-		if err != nil {
-			return nil, fmt.Errorf("error while parsing duration [%s]: %w", deref(e.NotifyBefore), err)
-		}
-	}
+func mapHTTPToStorageEvent(e Event) *storage.Event {
 	return &storage.Event{
-		ID:           deref(e.Id),
+		ID:           deref(e.ID),
 		Title:        deref(e.Title),
 		Start:        deref(e.Start),
 		End:          deref(e.End),
 		Description:  deref(e.Description),
-		OwnerID:      deref(e.OwnerId),
-		NotifyBefore: notifyBefore,
+		OwnerID:      deref(e.OwnerID),
+		NotifyBefore: time.Duration(deref(e.NotifyBefore)),
 		NotifyStart:  deref(e.NotifyStart),
 		Notified:     false,
-	}, nil
+	}
 }
 
 func deref[T any](p *T) T {
@@ -127,14 +118,14 @@ func deref[T any](p *T) T {
 }
 
 func mapStorageToHTTPEvent(e storage.Event) (Event, error) { //nolint:unparam
-	notifyBefore := e.NotifyBefore.String()
+	notifyBefore := int64(e.NotifyBefore)
 	return Event{
-		Id:           &e.ID,
+		ID:           &e.ID,
 		Title:        &e.Title,
 		Start:        &e.Start,
 		End:          &e.End,
 		Description:  &e.Description,
-		OwnerId:      &e.OwnerID,
+		OwnerID:      &e.OwnerID,
 		NotifyBefore: &notifyBefore,
 		NotifyStart:  &e.NotifyStart,
 		Notified:     &e.Notified,
@@ -154,10 +145,7 @@ func mapStorageToHTTPEvents(es []*storage.Event) ([]Event, error) {
 }
 
 func (s *Server) PostEvent(ctx context.Context, request PostEventRequestObject) (PostEventResponseObject, error) {
-	event, err := mapHTTPToStorageEvent(*request.Body)
-	if err != nil {
-		return nil, ErrPostingEvent(*request.Body, err)
-	}
+	event := mapHTTPToStorageEvent(*request.Body)
 	storageEvent, err := s.app.CreateEvent(ctx, event)
 	if err != nil {
 		return nil, ErrPostingEvent(*request.Body, err)
@@ -169,31 +157,28 @@ func (s *Server) PostEvent(ctx context.Context, request PostEventRequestObject) 
 	return PostEvent201JSONResponse(httpEvent), nil
 }
 
-func (s *Server) DeleteEventId(ctx context.Context, request DeleteEventIdRequestObject) (DeleteEventIdResponseObject, error) { //nolint:lll,revive,stylecheck
-	return DeleteEventId204Response{}, s.app.DeleteEvent(ctx, request.Id)
+func (s *Server) DeleteEventID(ctx context.Context, request DeleteEventIDRequestObject) (DeleteEventIDResponseObject, error) { //nolint:lll
+	return DeleteEventID204Response{}, s.app.DeleteEvent(ctx, request.ID)
 }
 
-func (s *Server) GetEventId(ctx context.Context, request GetEventIdRequestObject) (GetEventIdResponseObject, error) { //nolint:revive,lll,stylecheck
-	sevent, err := s.app.GetEvent(ctx, request.Id)
+func (s *Server) GetEventID(ctx context.Context, request GetEventIDRequestObject) (GetEventIDResponseObject, error) { //nolint:lll
+	sevent, err := s.app.GetEvent(ctx, request.ID)
 	if err != nil {
-		return nil, ErrGettingEventByID(request.Id, err)
+		return nil, ErrGettingEventByID(request.ID, err)
 	}
 	if sevent == nil {
-		return GetEventId200JSONResponse{}, nil
+		return GetEventID200JSONResponse{}, nil
 	}
 	event, err := mapStorageToHTTPEvent(*sevent)
 	if err != nil {
-		return nil, ErrGettingEventByID(request.Id, err)
+		return nil, ErrGettingEventByID(request.ID, err)
 	}
-	return GetEventId200JSONResponse(event), nil
+	return GetEventID200JSONResponse(event), nil
 }
 
-func (s *Server) PutEventId(ctx context.Context, request PutEventIdRequestObject) (PutEventIdResponseObject, error) { //nolint:revive,lll,stylecheck
-	event, err := mapHTTPToStorageEvent(*request.Body)
-	if err != nil {
-		return nil, ErrPuttingEvent(*request.Body, err)
-	}
-	storageEvent, err := s.app.UpdateEvent(ctx, request.Id, event)
+func (s *Server) PutEventID(ctx context.Context, request PutEventIDRequestObject) (PutEventIDResponseObject, error) { //nolint:lll
+	event := mapHTTPToStorageEvent(*request.Body)
+	storageEvent, err := s.app.UpdateEvent(ctx, request.ID, event)
 	if err != nil {
 		return nil, ErrPuttingEvent(*request.Body, err)
 	}
@@ -201,7 +186,7 @@ func (s *Server) PutEventId(ctx context.Context, request PutEventIdRequestObject
 	if err != nil {
 		return nil, ErrPuttingEvent(*request.Body, err)
 	}
-	return PutEventId200JSONResponse(httpEvent), nil
+	return PutEventID200JSONResponse(httpEvent), nil
 }
 
 func (s *Server) GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error) { //nolint:lll

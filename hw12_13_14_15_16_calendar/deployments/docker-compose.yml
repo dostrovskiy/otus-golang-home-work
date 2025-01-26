@@ -61,7 +61,8 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - migrations
+      migrations:
+        condition: service_completed_successfully
     networks:
       - calendar-network
 
@@ -70,7 +71,10 @@ services:
       context: .. # parent build context directory over this dosker-compose file
       dockerfile: build/scheduler/Dockerfile
     depends_on:
-      - kafka
+      kafka:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
     networks:
       - calendar-network
 
@@ -79,7 +83,10 @@ services:
       context: .. # parent build context directory over this dosker-compose file
       dockerfile: build/storer/Dockerfile
     depends_on:
-      - kafka
+      kafka:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
     networks:
       - calendar-network
 

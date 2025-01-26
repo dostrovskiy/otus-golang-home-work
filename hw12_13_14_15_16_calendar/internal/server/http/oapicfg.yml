@@ -5,3 +5,5 @@ generate:
   strict-server: true
   models: true
 output: server.gen.go
+output-options:
+  name-normalizer: ToCamelCaseWithInitialisms
