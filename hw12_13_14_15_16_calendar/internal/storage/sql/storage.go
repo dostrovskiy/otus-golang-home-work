@@ -135,10 +135,11 @@ func (s *Storage) FindForNotify(notifyDate time.Time, notified bool) ([]*storage
 		`select id, title, event_start, event_end, description, owner_id, notify_before,
 				notify_start, notified
 		   from events
-		  where notify_start <= :notifyDate
+		  where notify_start  > :zeroDate
+		    and notify_start <= :notifyDate
 			and event_start  >= :notifyDate
-			and notified      = :notified
-			and notify_before > 0`, map[string]interface{}{
+			and notified      = :notified`, map[string]interface{}{
+			"zeroDate":   time.Time{},
 			"notifyDate": notifyDate,
 			"notified":   notified,
 		})
