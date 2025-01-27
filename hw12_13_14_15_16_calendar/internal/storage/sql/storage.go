@@ -137,7 +137,8 @@ func (s *Storage) FindForNotify(notifyDate time.Time, notified bool) ([]*storage
 		   from events
 		  where notify_start <= :notifyDate
 			and event_start  >= :notifyDate
-			and notified      = :notified`, map[string]interface{}{
+			and notified      = :notified
+			and notify_before > 0`, map[string]interface{}{
 			"notifyDate": notifyDate,
 			"notified":   notified,
 		})

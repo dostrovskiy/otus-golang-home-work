@@ -60,8 +60,8 @@ func (s *Storage) FindForNotify(notifyDate time.Time, notified bool) ([]*storage
 	defer s.mu.RUnlock()
 	events := make([]*storage.Event, 0, len(s.events))
 	for _, event := range s.events {
-		if event.NotifyStart.Before(notifyDate) &&
-			event.Start.After(notifyDate) && event.Notified == notified {
+		if event.NotifyStart.Before(notifyDate) && event.Start.After(notifyDate) &&
+			event.Notified == notified && event.NotifyBefore > 0 {
 			events = append(events, event)
 		}
 	}
