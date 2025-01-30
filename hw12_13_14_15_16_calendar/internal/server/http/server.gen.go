@@ -27,11 +27,11 @@ import (
 type Event struct {
 	Description  *string    `json:"description,omitempty"`
 	End          *time.Time `json:"end,omitempty"`
-	Id           *string    `json:"id,omitempty"`
+	ID           *string    `json:"id,omitempty"`
 	Notified     *bool      `json:"notified,omitempty"`
-	NotifyBefore *string    `json:"notify_before,omitempty"`
-	NotifyStart  *time.Time `json:"notify_start,omitempty"`
-	OwnerId      *string    `json:"owner_id,omitempty"`
+	NotifyBefore *int64     `json:"notifyBefore,omitempty"`
+	NotifyStart  *time.Time `json:"notifyStart,omitempty"`
+	OwnerID      *string    `json:"ownerId,omitempty"`
 	Start        *time.Time `json:"start,omitempty"`
 	Title        *string    `json:"title,omitempty"`
 }
@@ -51,8 +51,8 @@ type GetEventsForNotifyParams struct {
 // PostEventJSONRequestBody defines body for PostEvent for application/json ContentType.
 type PostEventJSONRequestBody = Event
 
-// PutEventIdJSONRequestBody defines body for PutEventId for application/json ContentType.
-type PutEventIdJSONRequestBody = Event
+// PutEventIDJSONRequestBody defines body for PutEventID for application/json ContentType.
+type PutEventIDJSONRequestBody = Event
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -61,13 +61,13 @@ type ServerInterface interface {
 	PostEvent(w http.ResponseWriter, r *http.Request)
 	// Удалить событие по ID
 	// (DELETE /event/{id})
-	DeleteEventId(w http.ResponseWriter, r *http.Request, id string)
+	DeleteEventID(w http.ResponseWriter, r *http.Request, id string)
 	// Получить событие по ID
 	// (GET /event/{id})
-	GetEventId(w http.ResponseWriter, r *http.Request, id string)
+	GetEventID(w http.ResponseWriter, r *http.Request, id string)
 	// Обновить событие по ID
 	// (PUT /event/{id})
-	PutEventId(w http.ResponseWriter, r *http.Request, id string)
+	PutEventID(w http.ResponseWriter, r *http.Request, id string)
 	// Получить список событий за период start - end
 	// (GET /events/by-period)
 	GetEventsByPeriod(w http.ResponseWriter, r *http.Request, params GetEventsByPeriodParams)
@@ -102,8 +102,8 @@ func (siw *ServerInterfaceWrapper) PostEvent(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
-// DeleteEventId operation middleware
-func (siw *ServerInterfaceWrapper) DeleteEventId(w http.ResponseWriter, r *http.Request) {
+// DeleteEventID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEventID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -117,7 +117,7 @@ func (siw *ServerInterfaceWrapper) DeleteEventId(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteEventId(w, r, id)
+		siw.Handler.DeleteEventID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -127,8 +127,8 @@ func (siw *ServerInterfaceWrapper) DeleteEventId(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// GetEventId operation middleware
-func (siw *ServerInterfaceWrapper) GetEventId(w http.ResponseWriter, r *http.Request) {
+// GetEventID operation middleware
+func (siw *ServerInterfaceWrapper) GetEventID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -142,7 +142,7 @@ func (siw *ServerInterfaceWrapper) GetEventId(w http.ResponseWriter, r *http.Req
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEventId(w, r, id)
+		siw.Handler.GetEventID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -152,8 +152,8 @@ func (siw *ServerInterfaceWrapper) GetEventId(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
-// PutEventId operation middleware
-func (siw *ServerInterfaceWrapper) PutEventId(w http.ResponseWriter, r *http.Request) {
+// PutEventID operation middleware
+func (siw *ServerInterfaceWrapper) PutEventID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -167,7 +167,7 @@ func (siw *ServerInterfaceWrapper) PutEventId(w http.ResponseWriter, r *http.Req
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PutEventId(w, r, id)
+		siw.Handler.PutEventID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -410,9 +410,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("POST "+options.BaseURL+"/event", wrapper.PostEvent)
-	m.HandleFunc("DELETE "+options.BaseURL+"/event/{id}", wrapper.DeleteEventId)
-	m.HandleFunc("GET "+options.BaseURL+"/event/{id}", wrapper.GetEventId)
-	m.HandleFunc("PUT "+options.BaseURL+"/event/{id}", wrapper.PutEventId)
+	m.HandleFunc("DELETE "+options.BaseURL+"/event/{id}", wrapper.DeleteEventID)
+	m.HandleFunc("GET "+options.BaseURL+"/event/{id}", wrapper.GetEventID)
+	m.HandleFunc("PUT "+options.BaseURL+"/event/{id}", wrapper.PutEventID)
 	m.HandleFunc("GET "+options.BaseURL+"/events/by-period", wrapper.GetEventsByPeriod)
 	m.HandleFunc("GET "+options.BaseURL+"/events/for-notify", wrapper.GetEventsForNotify)
 	m.HandleFunc("GET "+options.BaseURL+"/hello", wrapper.GetHello)
@@ -437,77 +437,77 @@ func (response PostEvent201JSONResponse) VisitPostEventResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
-type DeleteEventIdRequestObject struct {
-	Id string `json:"id"`
+type DeleteEventIDRequestObject struct {
+	ID string `json:"id"`
 }
 
-type DeleteEventIdResponseObject interface {
-	VisitDeleteEventIdResponse(w http.ResponseWriter) error
+type DeleteEventIDResponseObject interface {
+	VisitDeleteEventIDResponse(w http.ResponseWriter) error
 }
 
-type DeleteEventId204Response struct {
+type DeleteEventID204Response struct {
 }
 
-func (response DeleteEventId204Response) VisitDeleteEventIdResponse(w http.ResponseWriter) error {
+func (response DeleteEventID204Response) VisitDeleteEventIDResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type DeleteEventId404Response struct {
+type DeleteEventID404Response struct {
 }
 
-func (response DeleteEventId404Response) VisitDeleteEventIdResponse(w http.ResponseWriter) error {
+func (response DeleteEventID404Response) VisitDeleteEventIDResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
 	return nil
 }
 
-type GetEventIdRequestObject struct {
-	Id string `json:"id"`
+type GetEventIDRequestObject struct {
+	ID string `json:"id"`
 }
 
-type GetEventIdResponseObject interface {
-	VisitGetEventIdResponse(w http.ResponseWriter) error
+type GetEventIDResponseObject interface {
+	VisitGetEventIDResponse(w http.ResponseWriter) error
 }
 
-type GetEventId200JSONResponse Event
+type GetEventID200JSONResponse Event
 
-func (response GetEventId200JSONResponse) VisitGetEventIdResponse(w http.ResponseWriter) error {
+func (response GetEventID200JSONResponse) VisitGetEventIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetEventId404Response struct {
+type GetEventID404Response struct {
 }
 
-func (response GetEventId404Response) VisitGetEventIdResponse(w http.ResponseWriter) error {
+func (response GetEventID404Response) VisitGetEventIDResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
 	return nil
 }
 
-type PutEventIdRequestObject struct {
-	Id   string `json:"id"`
-	Body *PutEventIdJSONRequestBody
+type PutEventIDRequestObject struct {
+	ID   string `json:"id"`
+	Body *PutEventIDJSONRequestBody
 }
 
-type PutEventIdResponseObject interface {
-	VisitPutEventIdResponse(w http.ResponseWriter) error
+type PutEventIDResponseObject interface {
+	VisitPutEventIDResponse(w http.ResponseWriter) error
 }
 
-type PutEventId200JSONResponse Event
+type PutEventID200JSONResponse Event
 
-func (response PutEventId200JSONResponse) VisitPutEventIdResponse(w http.ResponseWriter) error {
+func (response PutEventID200JSONResponse) VisitPutEventIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutEventId404Response struct {
+type PutEventID404Response struct {
 }
 
-func (response PutEventId404Response) VisitPutEventIdResponse(w http.ResponseWriter) error {
+func (response PutEventID404Response) VisitPutEventIDResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
 	return nil
 }
@@ -568,13 +568,13 @@ type StrictServerInterface interface {
 	PostEvent(ctx context.Context, request PostEventRequestObject) (PostEventResponseObject, error)
 	// Удалить событие по ID
 	// (DELETE /event/{id})
-	DeleteEventId(ctx context.Context, request DeleteEventIdRequestObject) (DeleteEventIdResponseObject, error)
+	DeleteEventID(ctx context.Context, request DeleteEventIDRequestObject) (DeleteEventIDResponseObject, error)
 	// Получить событие по ID
 	// (GET /event/{id})
-	GetEventId(ctx context.Context, request GetEventIdRequestObject) (GetEventIdResponseObject, error)
+	GetEventID(ctx context.Context, request GetEventIDRequestObject) (GetEventIDResponseObject, error)
 	// Обновить событие по ID
 	// (PUT /event/{id})
-	PutEventId(ctx context.Context, request PutEventIdRequestObject) (PutEventIdResponseObject, error)
+	PutEventID(ctx context.Context, request PutEventIDRequestObject) (PutEventIDResponseObject, error)
 	// Получить список событий за период start - end
 	// (GET /events/by-period)
 	GetEventsByPeriod(ctx context.Context, request GetEventsByPeriodRequestObject) (GetEventsByPeriodResponseObject, error)
@@ -646,25 +646,25 @@ func (sh *strictHandler) PostEvent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DeleteEventId operation middleware
-func (sh *strictHandler) DeleteEventId(w http.ResponseWriter, r *http.Request, id string) {
-	var request DeleteEventIdRequestObject
+// DeleteEventID operation middleware
+func (sh *strictHandler) DeleteEventID(w http.ResponseWriter, r *http.Request, id string) {
+	var request DeleteEventIDRequestObject
 
-	request.Id = id
+	request.ID = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteEventId(ctx, request.(DeleteEventIdRequestObject))
+		return sh.ssi.DeleteEventID(ctx, request.(DeleteEventIDRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DeleteEventId")
+		handler = middleware(handler, "DeleteEventID")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DeleteEventIdResponseObject); ok {
-		if err := validResponse.VisitDeleteEventIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(DeleteEventIDResponseObject); ok {
+		if err := validResponse.VisitDeleteEventIDResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -672,25 +672,25 @@ func (sh *strictHandler) DeleteEventId(w http.ResponseWriter, r *http.Request, i
 	}
 }
 
-// GetEventId operation middleware
-func (sh *strictHandler) GetEventId(w http.ResponseWriter, r *http.Request, id string) {
-	var request GetEventIdRequestObject
+// GetEventID operation middleware
+func (sh *strictHandler) GetEventID(w http.ResponseWriter, r *http.Request, id string) {
+	var request GetEventIDRequestObject
 
-	request.Id = id
+	request.ID = id
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetEventId(ctx, request.(GetEventIdRequestObject))
+		return sh.ssi.GetEventID(ctx, request.(GetEventIDRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetEventId")
+		handler = middleware(handler, "GetEventID")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetEventIdResponseObject); ok {
-		if err := validResponse.VisitGetEventIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetEventIDResponseObject); ok {
+		if err := validResponse.VisitGetEventIDResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -698,13 +698,13 @@ func (sh *strictHandler) GetEventId(w http.ResponseWriter, r *http.Request, id s
 	}
 }
 
-// PutEventId operation middleware
-func (sh *strictHandler) PutEventId(w http.ResponseWriter, r *http.Request, id string) {
-	var request PutEventIdRequestObject
+// PutEventID operation middleware
+func (sh *strictHandler) PutEventID(w http.ResponseWriter, r *http.Request, id string) {
+	var request PutEventIDRequestObject
 
-	request.Id = id
+	request.ID = id
 
-	var body PutEventIdJSONRequestBody
+	var body PutEventIDJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -712,18 +712,18 @@ func (sh *strictHandler) PutEventId(w http.ResponseWriter, r *http.Request, id s
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PutEventId(ctx, request.(PutEventIdRequestObject))
+		return sh.ssi.PutEventID(ctx, request.(PutEventIDRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutEventId")
+		handler = middleware(handler, "PutEventID")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PutEventIdResponseObject); ok {
-		if err := validResponse.VisitPutEventIdResponse(w); err != nil {
+	} else if validResponse, ok := response.(PutEventIDResponseObject); ok {
+		if err := validResponse.VisitPutEventIDResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -810,20 +810,20 @@ func (sh *strictHandler) GetHello(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+SWTW/aMBjHv0rk7RgauvXErVX3wmXiPk1VIA+tKxKntukUIaQWpO2wSb3svGnaF2AV",
-	"qPQt/QqPv9Fkm6YFAs3Ulx12gcR5/Nj+/3+2nw5psDBmEURSkEqHiMYOhL55fLUPkdQPMWcxcEnBNAcg",
-	"GpzGkrJIv8okBlIhQnIabZOuSyAKdHuT8dCXpEICX0JJ0hCIOx9Mg9wcEZO0SeH2xzpjLfCj7GuyVYcm",
-	"4zA9Vpv7ZmLugpzJlpA+l8UnyD5GwLcWTPMvc0kqW5CTqJvFsvouNCTp6iYaNdmc3mS9VnVwiOfqyFF9",
-	"vFIHOMBjPMcRXuJYNx5iir/VF9XTr3iBYwfPcDCJGOJAHaijFZJNxrrsrNeqxCX7wIUdZnWlvFI2648h",
-	"8mNKKuSlaXJJ7MsdA4IHGSBMmH+NidG/GpAKqTEhLUMu4bDXBiE3WJDowAaL5KSvH8ct2jC9vF1hmbIQ",
-	"6qfnHJqkQp55N5R6E0Q9m9topdNTrnmRvA2mQcQsEpbYF+XVxxh02hj8eSM8jqwPJ1pwvMTUeCzaYejz",
-	"5DrWfFQ99XXKMxyZWKut16FB1zLQAgnzEm+adjOnamC84X4IErgglfcdQvXEtF/EJZEfartpQGblcm8t",
-	"fZbMD3NSrs0zObv0vlm2JS7VEK0V6IWX9meApzi87jqt2q9J3nGOag5eYepUN/Vw25BD4xuQT6pT+QmQ",
-	"+4Yj1bOSzGz8B1T9B6Z4rvrq8526x+28U6D96Lr/06Ol/ORHi37RRmXn/kPuse9Z7uVuZ2eU8OpJKQZO",
-	"mbkjl+49sZHUbGQ+Cntt4MkNC/Z6XYZDkXu36+Zn13XKvXPfd99TCaEoCEY2us+5nywA5QrHxrKzaedO",
-	"C+zqRV0dPMGBdn6kDnCMKQ4d44xTcrSGt1FoMl6yddbdLLxm/J0NLQSDTVvSZjwaElnZWeAIyurR/4QB",
-	"W3NiqnpZ1Xmmr50+HuMIh5jixXUZOhnJ24FWiy0D4a0JKFZiqJ4ZVVe5nwyOBsZjfQOqQ9UzB9bR3Arn",
-	"g0yB1e3+CQAA//+8WtZM+AwAAA==",
+	"H4sIAAAAAAAC/+SWy27bOhCGX0XgOUs5cs4JuvAuQXrxpjDQZdGFYo8TBhapkHQKwTCQ2EC7aIFsum5R",
+	"9AXcwEacm/IKwzcqSDpybCuOily66MaWqOEM+c/H4XRInUcxZ8CUJJUOkfUdiEL7+HwfmDIPseAxCEXB",
+	"DjdA1gWNFeXMvKokBlIhUgnKtknXJ8AaZrzJRRQqUiGNUEFJ0QiIv2hMG7k+GFe0SeHmxy3OWxCy7Guy",
+	"AU0uYCYUZerZ2jQMZQq2QUynvFGhUMUXx98zENX8Fcrfc6WoakGOo25my7d2oa5I1wxR1uQLUpP1WtXD",
+	"IZ7rI0/38Uof4ACP8RxHeIljM3iIKf7Un3TPvOIFjj08w8HEYogDfaCPVki2GJdgb71WJT7ZByFdmNWV",
+	"8krZbj8GFsaUVMj/dsgncah2LAMBZGxwaf8NIaFZqNGL1LhUDh+fCNhrg1QbvJEYwzpnajI3jOMWrdtZ",
+	"wa50ODn+zNO/ApqkQv4JpoAGEzoD59tqZdxTYVBRog12QMacSQfrf+XVxwg6mxj8PhUeRy4PJ0ZwvMTU",
+	"5li2oygUybWt/ah7+vNMznBkbZ22QYc2uo6BFihYlHjTjts1VTdtbkQYgQIhSeVth1CzMJMv4hMWRvY4",
+	"NMi8XP6Nrc+T+W5ByrVFJue33rfbdsSlBqK1ArPw0v0M8BSH11NnVfsx8TvOUc3DK0y96qYJtw05NL4E",
+	"9aQ6lZ8AuS840j0nydzBf0DVv2GK57qvP96pe9zOqwLtR9f9j5aW8pOXFvNiEpXV/Yc8Y18z38uzndUo",
+	"GWwlpRgE5faOXHr25EZSc5b5KOy1QSRTFtz1ugyHIvdu18/3blqUe/u+77mnCiJZEIwseihEmNwCyhWO",
+	"bcrOZjN3WuBU3zbVwxMcmMyP9AGOMcWhZzPjlTyj4U0UmlyUXJd1NwsvuHjtTAvB4NyWTDIeDYms4yxQ",
+	"grJW9C9hwPWcmOpe1nWemWunj8c4wiGmeHHdhk4iBTvQavFlILyyBsVaDN2zUU2X+8HiaGE8NjegPtQ9",
+	"W7COFna4aGQbrG73VwAAAP//aHDaIfMMAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

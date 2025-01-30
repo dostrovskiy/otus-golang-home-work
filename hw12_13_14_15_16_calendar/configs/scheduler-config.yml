@@ -8,4 +8,4 @@ datasource:
 logger:
   level: "DEBUG" # "ERROR", "WARN", "INFO", "DEBUG"
 scheduler:
-  interval: "10s"
+  interval: "5s"

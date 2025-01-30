@@ -49,10 +49,10 @@ func TestServer(t *testing.T) {
 		require.Equal(t, http.StatusCreated, add.Code)
 		err = json.NewDecoder(add.Body).Decode(&addEvent)
 		require.NoError(t, err, "error unmarshaling post event response")
-		require.NotEmpty(t, addEvent.Id)
+		require.NotEmpty(t, addEvent.ID)
 		var id string
-		if addEvent.Id != nil {
-			id = *addEvent.Id
+		if addEvent.ID != nil {
+			id = *addEvent.ID
 		}
 
 		var getEvent Event

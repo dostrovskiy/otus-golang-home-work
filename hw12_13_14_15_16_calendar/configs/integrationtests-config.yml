@@ -1,0 +1,5 @@
+server:
+  address: "http://calendar:5000"
+datasource:
+  storagetype: "sql"
+  dsn: "postgres://user:password@pdb:5432/calendar_db?sslmode=disable"

@@ -149,12 +149,12 @@ components:
           format: date-time
         description:
           type: string
-        owner_id:
+        ownerId:
           type: string
-        notify_before:
-          type: string
-          format: duration
-        notify_start:
+        notifyBefore:
+          type: integer
+          format: int64
+        notifyStart:
           type: string
           format: date-time
         notified:
