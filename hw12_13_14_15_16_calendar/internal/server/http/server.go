@@ -10,6 +10,7 @@ import (
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/storage"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -52,14 +53,15 @@ func (s *Server) Start(ctx context.Context, addr string) error {
 	if err != nil {
 		return fmt.Errorf("error loading swagger spec: %w", err)
 	}
-
 	// Clear out the servers array in the swagger spec, that skips validating
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
 	mux := http.NewServeMux()
 
-	mws := []StrictMiddlewareFunc{s.mw.loggingMiddleware}
+	mux.Handle("/metrics", promhttp.Handler())
+
+	mws := []StrictMiddlewareFunc{s.mw.loggingMiddleware, s.mw.metricsMiddleware}
 	h := NewStrictHandler(s, mws)
 
 	HandlerFromMux(h, mux)

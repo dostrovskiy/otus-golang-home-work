@@ -92,6 +92,7 @@ func (a *App) UpdateEvent(_ context.Context, id string, event *storage.Event) (*
 }
 
 func (a *App) DeleteEvent(_ context.Context, id string) error {
+	a.logger.Debug("App delete event id: [%s]", id)
 	return a.storage.Delete(id)
 }
 

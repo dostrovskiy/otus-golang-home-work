@@ -20,6 +20,8 @@ linters-settings:
           - github.com/google/uuid
           - github.com/spf13/viper
           - github.com/jmoiron/sqlx
+          - github.com/prometheus/client_golang/prometheus
+          - github.com/prometheus/client_golang/prometheus/promhttp
           - github.com/oapi-codegen/runtime/strictmiddleware/nethttp
           - github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar
       test:

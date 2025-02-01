@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +33,7 @@ func TestEvent(t *testing.T) {
 		postEvent(t, newEvent)
 
 		event := getEvent(t, newEvent.ID)
-		require.NotNil(t, event)
+		assert.NotNil(t, event)
 
 		deleteEvent(t, newEvent.ID)
 	})
@@ -54,19 +55,24 @@ func TestEvent(t *testing.T) {
 		} else {
 			events = append(events, genTestEvent(now.AddDate(0, 0, 8)))
 		}
+        // if week event is in this month, we have 3 events, otherwise 2
+		monthEventCount := 2
+		if events[1].Start.Month() == now.Month() {
+			monthEventCount = 3
+		}
 
 		for _, event := range events {
 			postEvent(t, event)
 		}
 
 		thisDayEvents := findEvents(t, BeginOfDay(now), EndOfDay(now))
-		require.Equal(t, 1, len(thisDayEvents))
+		assert.Equal(t, 1, len(thisDayEvents))
 
 		thisWeekEvents := findEvents(t, BeginOfWeek(now), EndOfWeek(now))
-		require.Equal(t, 2, len(thisWeekEvents))
+		assert.Equal(t, 2, len(thisWeekEvents))
 
 		thisMonthEvents := findEvents(t, BeginOfMonth(now), EndOfMonth(now))
-		require.Equal(t, 3, len(thisMonthEvents))
+		assert.Equal(t, monthEventCount, len(thisMonthEvents))
 
 		for _, event := range events {
 			deleteEvent(t, event.ID)
