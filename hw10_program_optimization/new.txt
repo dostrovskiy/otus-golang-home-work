@@ -1,0 +1,36 @@
+goos: linux
+goarch: amd64
+pkg: github.com/dostrovskiy/otus-golang-home-work/hw10_program_optimization
+cpu: Intel(R) Core(TM) i5-10600K CPU @ 4.10GHz
+BenchmarkGetDomainStat/100-12         	   21142	     56272 ns/op	   35989 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   21849	     55299 ns/op	   35999 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   20324	     58139 ns/op	   36009 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   18498	     64435 ns/op	   36009 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   19363	     56837 ns/op	   36008 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   21306	     55444 ns/op	   35989 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   21201	     56148 ns/op	   35993 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   20516	     56775 ns/op	   35988 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   21481	     56271 ns/op	   35998 B/op	     262 allocs/op
+BenchmarkGetDomainStat/100-12         	   21651	     56681 ns/op	   36008 B/op	     262 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2029	    550351 ns/op	  315354 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2019	    552711 ns/op	  315361 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2037	    539975 ns/op	  315296 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2038	    546626 ns/op	  315362 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2038	    543260 ns/op	  315306 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    1975	    548128 ns/op	  315353 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2028	    551699 ns/op	  315327 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    1934	    543585 ns/op	  315340 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2001	    543559 ns/op	  315361 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/1000-12        	    2055	    548586 ns/op	  315316 B/op	    2456 allocs/op
+BenchmarkGetDomainStat/10000-12       	     216	   5525228 ns/op	 3069162 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     214	   5534634 ns/op	 3069733 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     211	   5512006 ns/op	 3069346 B/op	   24488 allocs/op
+BenchmarkGetDomainStat/10000-12       	     213	   5521605 ns/op	 3069234 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     216	   5497646 ns/op	 3068317 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     213	   5564713 ns/op	 3068074 B/op	   24488 allocs/op
+BenchmarkGetDomainStat/10000-12       	     216	   5485914 ns/op	 3068907 B/op	   24488 allocs/op
+BenchmarkGetDomainStat/10000-12       	     211	   5477988 ns/op	 3068383 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     217	   5533295 ns/op	 3068834 B/op	   24487 allocs/op
+BenchmarkGetDomainStat/10000-12       	     217	   5587324 ns/op	 3069709 B/op	   24488 allocs/op
+PASS
+ok  	github.com/dostrovskiy/otus-golang-home-work/hw10_program_optimization	47.983s

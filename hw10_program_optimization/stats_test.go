@@ -1,9 +1,13 @@
+//go:build !bench
 // +build !bench
 
 package hw10programoptimization
 
 import (
+	"archive/zip"
+	"bufio"
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -36,4 +40,52 @@ func TestGetDomainStat(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, DomainStat{}, result)
 	})
+
+	t.Run("domain error", func(t *testing.T) {
+		_, err := GetDomainStat(bytes.NewBufferString(data), "\\")
+		require.Error(t, err)
+	})
+
+	t.Run("json error", func(t *testing.T) {
+		_, err := GetDomainStat(bytes.NewBufferString("{"), "gov")
+		require.Error(t, err)
+	})
+}
+
+func BenchmarkGetDomainStat(b *testing.B) {
+	getData := func(size int) []byte {
+		data := make([]byte, 0)
+		r, err := zip.OpenReader("testdata/users.dat.zip")
+		require.NoError(b, err)
+		defer r.Close()
+		require.Equal(b, 1, len(r.File))
+		
+		f, err := r.File[0].Open()
+		require.NoError(b, err)
+
+		scanner := bufio.NewScanner(f)
+		for i := 0; i < size; i++ {
+			if !scanner.Scan() {
+				scanner = bufio.NewScanner(f)
+			}
+			b := append(scanner.Bytes(), []byte("\n")...)
+			if i == size-1 {
+				b = b[:len(b)-1]
+			}
+			data = append(data, b...)
+		}
+		return data
+	}
+
+	for _, size := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("%d", size), func(b *testing.B) {
+			b.StopTimer()
+			data := getData(size)
+			b.StartTimer()
+			for i := 0; i < b.N; i++ {
+				_, err := GetDomainStat(bytes.NewReader(data), "gov")
+				require.NoError(b, err)
+			}
+		})
+	}
 }
