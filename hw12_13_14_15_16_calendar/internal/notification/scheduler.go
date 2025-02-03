@@ -6,6 +6,7 @@ import (
 
 	"github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/app"
 	internalmessagebroker "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/messagebroker"
+	metrics "github.com/dostrovskiy/otus-golang-home-work/hw12_13_14_15_16_calendar/internal/metrics"
 )
 
 type Scheduler struct {
@@ -34,6 +35,11 @@ func (s *Scheduler) Start(ctx context.Context, interval time.Duration) error {
 }
 
 func (s *Scheduler) SendNotifications(ctx context.Context) {
+	metrics.EventsCleanupStatus.Set(1)
+	defer func() {
+		metrics.EventsCleanupStatus.Set(0)
+	}()
+
 	notifyDate := time.Now()
 	s.logger.Debug("Sending notifications for %s", notifyDate)
 	events, err := s.app.FindEventsForNotify(ctx, notifyDate, false)
@@ -57,10 +63,18 @@ func (s *Scheduler) SendNotifications(ctx context.Context) {
 			s.logger.Error("Scheduler failed to send notification: %s", err.Error())
 			continue
 		}
+		metrics.EventsNotificationCounter.Inc()
 	}
 }
 
 func (s *Scheduler) DeletePastEvents(ctx context.Context) {
+	start := time.Now()
+	metrics.EventsCleanupStatus.Set(1)
+	defer func() {
+		metrics.EventsCleanupStatus.Set(0)
+		metrics.EventsCleanupDuration.Observe(time.Since(start).Seconds())
+	}()
+
 	startDate := time.Unix(0, 0)
 	endDate := time.Now().AddDate(-1, 0, 0)
 	s.logger.Debug("Deleting past events from %s to %s", startDate, endDate)
@@ -76,5 +90,6 @@ func (s *Scheduler) DeletePastEvents(ctx context.Context) {
 			s.logger.Error("failed to delete event: %w", err)
 		}
 	}
+	metrics.EventsDeletedCounter.Add(float64(len(events)))
 }
 //nolint

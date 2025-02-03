@@ -89,4 +89,8 @@ integration-tests-cleanup:
 		--remove-orphans \
 		--timeout 60;
 
+prune:
+	docker image prune -f
+	docker volume prune -f
+
 .PHONY: build run build-img run-img version test lint comp up down restart
