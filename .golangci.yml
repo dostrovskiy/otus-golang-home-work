@@ -20,6 +20,7 @@ linters-settings:
           - github.com/google/uuid
           - github.com/spf13/viper
           - github.com/jmoiron/sqlx
+          - github.com/goccy/go-json
           - github.com/prometheus/client_golang/prometheus
           - github.com/prometheus/client_golang/prometheus/promhttp
           - github.com/oapi-codegen/runtime/strictmiddleware/nethttp
