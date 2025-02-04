@@ -1,0 +1,24 @@
+goos: linux
+goarch: amd64
+pkg: github.com/dostrovskiy/otus-golang-home-work/hw10_program_optimization
+cpu: Intel(R) Core(TM) i5-10600K CPU @ 4.10GHz
+                       │     old.txt     │               new.txt               │
+                       │     sec/op      │   sec/op     vs base                │
+GetDomainStat/100-12     130088.78µ ± 1%   56.48µ ± 3%  -99.96% (p=0.000 n=10)
+GetDomainStat/1000-12     133519.0µ ± 1%   547.4µ ± 1%  -99.59% (p=0.000 n=10)
+GetDomainStat/10000-12     163.310m ± 1%   5.523m ± 1%  -96.62% (p=0.000 n=10)
+geomean                      141.6m        554.8µ       -99.61%
+
+                       │     old.txt      │               new.txt                │
+                       │       B/op       │     B/op      vs base                │
+GetDomainStat/100-12     133016.43Ki ± 0%   35.15Ki ± 0%  -99.97% (p=0.000 n=10)
+GetDomainStat/1000-12     134356.0Ki ± 0%   308.0Ki ± 0%  -99.77% (p=0.000 n=10)
+GetDomainStat/10000-12     145.816Mi ± 0%   2.927Mi ± 0%  -97.99% (p=0.000 n=10)
+geomean                      135.5Mi        319.0Ki       -99.77%
+
+                       │    old.txt     │               new.txt               │
+                       │   allocs/op    │  allocs/op   vs base                │
+GetDomainStat/100-12     1701364.0 ± 0%    262.0 ± 0%  -99.98% (p=0.000 n=10)
+GetDomainStat/1000-12    1713.466k ± 0%   2.456k ± 0%  -99.86% (p=0.000 n=10)
+GetDomainStat/10000-12    1834.50k ± 0%   24.49k ± 0%  -98.67% (p=0.000 n=10)
+geomean                     1.749M        2.507k       -99.86%
